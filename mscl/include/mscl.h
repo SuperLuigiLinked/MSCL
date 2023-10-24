@@ -14,6 +14,9 @@
 typedef float mscl_sample;
 typedef float mscl_time;
 
+#define MSCL_PI 3.14159265358979323846
+#define MSCL_TAU 6.28318530717958647692
+
 enum mscl_note
 {
 	mscl_A = 0,
