@@ -2,9 +2,10 @@
  * @file demo/player_xaudio2.cpp
  */
 
-#include <mscl.h>
-#include "player.hpp"
 #include "utils.h"
+#include "player.hpp"
+
+#include <mscl.h>
 
 #include <Windows.h>
 #include <xaudio2.h>
@@ -36,16 +37,17 @@ public:
         ASSERT(mvoice != NULL);
     }
 
-    virtual void play(const size_t num_samples, const float* const samples) final
+    virtual void play(const size_t num_samples, const float* const samples, const mscl_time sps) final
     {
         ASSERT(samples != nullptr);
 
         constexpr WORD wave_format = WAVE_FORMAT_IEEE_FLOAT;
         constexpr WORD sample_bits = sizeof(float) * CHAR_BIT;
         constexpr WORD channel_count = 1;
-        constexpr DWORD samples_psec = 44'100;
-        constexpr DWORD bytes_psec = sample_bits / CHAR_BIT * samples_psec;
         constexpr WORD block_align = channel_count * sample_bits / CHAR_BIT;
+        
+        const DWORD samples_psec = static_cast<DWORD>(sps);
+        const DWORD bytes_psec = sample_bits / CHAR_BIT * samples_psec;
         
         const DWORD num_bytes = static_cast<DWORD>(num_samples * sizeof(float));
         const BYTE* const bytes = reinterpret_cast<const BYTE*>(samples);

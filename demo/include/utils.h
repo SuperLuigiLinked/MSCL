@@ -11,10 +11,10 @@
 #include <stdio.h>
 #include <math.h>
 
-#define LOG(...) (void)fprintf(stderr, __VA_ARGS__)
-
-#if __has_builtin(__debugbreak) && !defined(NDEBUG)
-    #define ASSERT(expr) if (expr) {} else (__debugbreak(), abort())
+#if !defined(NDEBUG)
+    #define LOG(...) (void)fprintf(stderr, __VA_ARGS__)
+    #define ASSERT(expr) if (expr) {} else (LOG("ASSERTION FAILED:\n" #expr "\n"), abort())
 #else
+    #define LOG(...) (void)0
     #define ASSERT(expr) if (expr) {} else abort()
 #endif
