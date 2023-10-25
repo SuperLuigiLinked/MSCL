@@ -17,4 +17,9 @@ target_compile_options(mscl_mscl
         "-Weverything"
         "-Wno-c++98-compat"
         "-Wno-c++98-compat-pedantic"
+        "-Wno-old-style-cast"
+        "-Wno-declaration-after-statement"
+        "-Wno-unsafe-buffer-usage"
+        "-Wno-unused-macros"
+        "-Wno-float-equal"
 )

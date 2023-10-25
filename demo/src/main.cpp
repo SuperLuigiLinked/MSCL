@@ -4,10 +4,11 @@
  * @brief Demo Program for MSCL library.
  */
 
+#include <mscl.h>
+
 #include "utils.h"
 #include "player.hpp"
-
-#include <mscl.h>
+#include "songs.hpp"
 
 #include <vector>
 #include <memory>
@@ -24,22 +25,27 @@ int main(void)
 	const std::unique_ptr<Player> player{ player_xaudio2() };
 	if (!player) return EXIT_FAILURE;
 
-	constexpr mscl_time sps = 48'000.0;
-	constexpr size_t num_samples = size_t(sps);
-	std::vector<float> samples(num_samples);
-	
-	for (size_t i = 0; i < num_samples; ++i)
-	{
-		const mscl_time secs = mscl_time(i) / sps;
-		const mscl_sample freq = 440.0;
-		samples[i] = mscl_sample(0.20) * sin(mscl_time(MSCL_TAU) * secs * freq);
-	}
+	const size_t num_events = demo1_n0.size();
+	const mscl_event* const events = demo1_n0.data();
 
-	const mscl_time song_len = mscl_time(num_samples) / sps;
+	constexpr mscl_time sps = 44'100.0;
+	const mscl_time song_len = mscl_estimate(num_events, events);
+
+	const size_t num_samples = size_t(sps * song_len);
+	std::vector<float> samples(num_samples);
+
+	LOG("[MSCL] Generating...\n");
+	mscl_engine engine = {};
+	for (float& sample : samples)
+	{
+		const mscl_sample data = mscl_advance(&engine, sps, num_events, events);
+		sample = float(data);
+	}
 
 	LOG("[MSCL] Playing...\n");
 	player->play(num_samples, samples.data(), sps);
 
+	LOG("[MSCL] Sleeping... [%f]\n", double(song_len));
 	std::this_thread::sleep_for(std::chrono::duration<mscl_time>(song_len));
 
 	LOG("[MSCL] Exiting...\n");
