@@ -16,7 +16,7 @@
 
 using Channel = std::span<const mscl_event>;
 using Channels = std::initializer_list<const Channel>;
-struct Song { mscl_time tempo; Channels channels; };
+struct Song { const char* name; mscl_time tempo; Channels channels; };
 
 // ================================================================================================================================
 
@@ -173,7 +173,7 @@ inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
 	mscl_event{mscl_event_tone, {.tone = MSCL_REST }},
 };
 
-inline static constexpr Song CONCAT(song, SONG_NAME){ 60.0, {CONCAT(SONG_NAME, c0)} }; 
+inline static constexpr Song CONCAT(song, SONG_NAME){ "Demo-1", 60.0, {CONCAT(SONG_NAME, c0)} }; 
 
 #undef SONG_NAME
 
@@ -230,7 +230,7 @@ inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(3, MSCL_As) }},
 };
 
-inline static constexpr Song CONCAT(song, SONG_NAME){ 60.0, {CONCAT(SONG_NAME, c0)} }; 
+inline static constexpr Song CONCAT(song, SONG_NAME){ "Demo-2", 60.0, {CONCAT(SONG_NAME, c0)} }; 
 
 #undef SONG_NAME
 
@@ -422,7 +422,7 @@ inline static constexpr std::array CONCAT(SONG_NAME, c1) = {
 	mscl_event{mscl_event_loop_end, {}},
 };
 
-inline static constexpr Song CONCAT(song, SONG_NAME){ 148.0, {CONCAT(SONG_NAME, c0), CONCAT(SONG_NAME, c1)} }; 
+inline static constexpr Song CONCAT(song, SONG_NAME){ "Menuet", 148.0, {CONCAT(SONG_NAME, c0), CONCAT(SONG_NAME, c1)} }; 
 
 #undef SONG_NAME
 

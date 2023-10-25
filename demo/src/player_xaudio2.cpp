@@ -19,6 +19,7 @@ private:
 
     ComPtr<IXAudio2> xaudio2;
     IXAudio2MasteringVoice* mvoice;
+    IXAudio2SourceVoice* svoice;
 
 public:
 
@@ -30,15 +31,24 @@ public:
 
         const HRESULT res_xa2 = XAudio2Create(&xaudio2, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
         ASSERT(SUCCEEDED(res_xa2));
-        ASSERT(xaudio2 != NULL);
+        ASSERT(xaudio2 != nullptr);
 
         const HRESULT res_mv = xaudio2->CreateMasteringVoice(&mvoice, XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE, 0, nullptr, nullptr, AudioCategory_GameEffects);
         ASSERT(SUCCEEDED(res_mv));
-        ASSERT(mvoice != NULL);
+        ASSERT(mvoice != nullptr);
+
+        svoice = nullptr;
     }
 
-    virtual void play(const size_t num_samples, const float* const samples, const mscl_time sps) final
+    ~PlayerXAudio2() final
     {
+        if (svoice) svoice->DestroyVoice();
+        if (mvoice) mvoice->DestroyVoice();
+    }
+
+    void play(const size_t num_samples, const float* const samples, const mscl_time sps) final
+    {
+        if (num_samples == 0) return;
         ASSERT(samples != nullptr);
 
         constexpr WORD wave_format = WAVE_FORMAT_IEEE_FLOAT;
@@ -62,9 +72,14 @@ public:
             .cbSize = 0,
         };
 
-        IXAudio2SourceVoice* svoice;
+        if (svoice != nullptr)
+        {
+            svoice->DestroyVoice();
+            svoice = nullptr;
+        }
         const HRESULT res_sv = xaudio2->CreateSourceVoice(&svoice, &wavefmt, 0, XAUDIO2_MAX_FREQ_RATIO, nullptr, nullptr, nullptr);
         ASSERT(SUCCEEDED(res_sv));
+        ASSERT(svoice != nullptr);
 
         const XAUDIO2_BUFFER buffer = {
             .Flags = XAUDIO2_END_OF_STREAM,
@@ -83,6 +98,26 @@ public:
 
         const HRESULT res_start = svoice->Start(0, XAUDIO2_COMMIT_NOW);
         ASSERT(SUCCEEDED(res_start));
+    }
+
+    bool playing() final
+    {
+        if (!svoice) return false;
+
+        XAUDIO2_VOICE_STATE state = {};
+        svoice->GetState(&state, XAUDIO2_VOICE_NOSAMPLESPLAYED);
+
+        return state.BuffersQueued > 0;
+    }
+
+    size_t pos() final
+    {
+        if (!svoice) return 0;
+
+        XAUDIO2_VOICE_STATE state = {};
+        svoice->GetState(&state);
+
+        return size_t(state.SamplesPlayed);
     }
 };
 
