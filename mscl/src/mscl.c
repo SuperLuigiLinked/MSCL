@@ -34,11 +34,11 @@ extern mscl_time mscl_estimate(const size_t num_events, const mscl_event* const 
 	return time;
 }
 
-extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, const size_t num_events, const mscl_event* const events)
+extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, const mscl_time speed, const size_t num_events, const mscl_event* const events)
 {
     if (!engine) return 0;
 
-    const mscl_time seconds = (mscl_time)engine->sample_idx / sps;
+    const mscl_time seconds = (mscl_time)engine->sample_idx / (sps / speed);
 
     while ((engine->event_idx < num_events) && (seconds >= engine->next_event))
     {
@@ -82,9 +82,9 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
         ++engine->event_idx;
     }
 
-    const mscl_time sus_secs = seconds - engine->event_s;
-    const mscl_time rel_secs = seconds - engine->event_r;
-    const mscl_time tone_len = engine->event_r - engine->event_s;
+    const mscl_time sus_secs = (seconds - engine->event_s) / speed;
+    const mscl_time rel_secs = (seconds - engine->event_r) / speed;
+    const mscl_time tone_len = (engine->event_r - engine->event_s) / speed;
 
     const mscl_sample v_sample = engine->vibrato ? engine->vibrato(sus_secs) : (mscl_sample)1.0;
     const mscl_sample w_sample = engine->waveform ? engine->waveform(sus_secs * (engine->frequency * v_sample)) : (mscl_sample)0.0;

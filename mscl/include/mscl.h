@@ -25,18 +25,38 @@ typedef float mscl_time;
 
 enum mscl_note
 {
-	MSCL_A = 0,
-	MSCL_B = 2,
 	MSCL_C = 3,
+	MSCL_Cf = MSCL_C - 1,
+	MSCL_Cs = MSCL_C + 1,
+
 	MSCL_D = 5,
+	MSCL_Df = MSCL_D - 1,
+	MSCL_Ds = MSCL_D + 1,
+
 	MSCL_E = 7,
+	MSCL_Ef = MSCL_E - 1,
+	MSCL_Es = MSCL_E + 1,
+
 	MSCL_F = 8,
-	MSCL_G = 10
+	MSCL_Ff = MSCL_F - 1,
+	MSCL_Fs = MSCL_F + 1,
+
+	MSCL_G = 10,
+	MSCL_Gf = MSCL_G - 1,
+	MSCL_Gs = MSCL_G + 1,
+
+	MSCL_A = 12,
+	MSCL_Af = MSCL_A - 1,
+	MSCL_As = MSCL_A + 1,
+
+	MSCL_B = 14,
+	MSCL_Bf = MSCL_B - 1,
+	MSCL_Bs = MSCL_B + 1,
 };
 typedef enum mscl_note mscl_note;
 
-#define MSCL_TONE(note, octave) ((mscl_sample)(octave) + ((mscl_sample)(note) / (mscl_sample)(12)))
-#define MSCL_FREQ(tone) ((mscl_sample)(27.5) * (mscl_sample)(mscl_pow((mscl_sample)(2), (mscl_sample)(tone))))
+#define MSCL_TONE(octave, note) ((mscl_sample)(octave) + ((mscl_sample)(note) / (mscl_sample)(12)))
+#define MSCL_FREQ(tone) ((mscl_sample)(13.75) * (mscl_sample)(mscl_pow((mscl_sample)(2), (mscl_sample)(tone))))
 #define MSCL_REST ((mscl_sample)0)
 
 typedef mscl_sample (mscl_envelope)(mscl_time seconds);
@@ -103,6 +123,6 @@ extern
 #ifdef __cplusplus
 "C"
 #endif
-mscl_sample mscl_advance(mscl_engine* engine, mscl_time sps, size_t num_events, const mscl_event* events);
+mscl_sample mscl_advance(mscl_engine* engine, mscl_time sps, mscl_time speed, size_t num_events, const mscl_event* events);
 
 #endif
