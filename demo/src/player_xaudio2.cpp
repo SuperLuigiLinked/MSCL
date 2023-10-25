@@ -62,6 +62,10 @@ public:
             .cbSize = 0,
         };
 
+        IXAudio2SourceVoice* svoice;
+        const HRESULT res_sv = xaudio2->CreateSourceVoice(&svoice, &wavefmt, 0, XAUDIO2_MAX_FREQ_RATIO, nullptr, nullptr, nullptr);
+        ASSERT(SUCCEEDED(res_sv));
+
         const XAUDIO2_BUFFER buffer = {
             .Flags = XAUDIO2_END_OF_STREAM,
             .AudioBytes = num_bytes,
@@ -73,10 +77,6 @@ public:
             .LoopCount = 0,
             .pContext = nullptr,
         };
-
-        IXAudio2SourceVoice* svoice;
-        const HRESULT res_sv = xaudio2->CreateSourceVoice(&svoice, &wavefmt, 0, XAUDIO2_MAX_FREQ_RATIO, nullptr, nullptr, nullptr);
-        ASSERT(SUCCEEDED(res_sv));
 
         const HRESULT res_submit = svoice->SubmitSourceBuffer(&buffer, nullptr);
         ASSERT(SUCCEEDED(res_submit));

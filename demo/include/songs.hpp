@@ -120,10 +120,9 @@ inline mscl_sample vib_medium(const mscl_time secs)
 
 // ================================================================================================================================
 
-#undef SONG_NAME
 #define SONG_NAME demo1
 
-inline static constexpr std::array CONCAT(SONG_NAME, n0) = {
+inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
 	mscl_event{mscl_event_volume, {.volume = mscl_sample(0.20) }},
 	mscl_event{mscl_event_sustain, {.sustain = env_hold }},
 	mscl_event{mscl_event_release, {.release = rel_fade }},
@@ -141,5 +140,63 @@ inline static constexpr std::array CONCAT(SONG_NAME, n0) = {
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 5) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_REST }},
 };
+
+#undef SONG_NAME
+
+// ================================================================================================================================
+
+#undef SONG_NAME
+#define SONG_NAME demo2
+
+inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
+	mscl_event{mscl_event_volume, {.volume = 0.20f }},
+	mscl_event{mscl_event_sustain, {.sustain = env_fade }},
+	mscl_event{mscl_event_release, {.release = rel_drop }},
+	mscl_event{mscl_event_vibrato, {.vibrato = vib_medium }},
+	mscl_event{mscl_event_waveform, {.waveform = wav_square }},
+
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 2) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 4.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_B - 1, 3) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 3) }},
+
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 2) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 4.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_B - 1, 3) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 3) }},
+
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_B - 1, 3) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 2) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 4.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_B - 1, 3) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 3) }},
+
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 2) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 4.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_C, 1) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 2.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(MSCL_B - 1, 3) }},
+};
+
+#undef SONG_NAME
 
 // ================================================================================================================================
