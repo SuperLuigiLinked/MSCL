@@ -100,6 +100,33 @@ public:
         ASSERT(SUCCEEDED(res_start));
     }
 
+    void pause() final
+    {
+        if (svoice)
+        {
+            const HRESULT res = svoice->Stop(0, XAUDIO2_COMMIT_NOW);
+            ASSERT(SUCCEEDED(res));
+        }
+    }
+
+    void unpause() final
+    {
+        if (svoice)
+        {
+            const HRESULT res = svoice->Start(0, XAUDIO2_COMMIT_NOW);
+            ASSERT(SUCCEEDED(res));
+        }
+    }
+
+    void stop() final
+    {
+        if (svoice)
+        {
+            svoice->DestroyVoice();
+            svoice = nullptr;
+        }
+    }
+
     bool playing() final
     {
         if (!svoice) return false;
