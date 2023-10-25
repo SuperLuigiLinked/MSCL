@@ -18,18 +18,50 @@
     #define DBG_ASSERT(expr) (void)0
 #endif
 
-extern mscl_time mscl_estimate(const size_t num_events, const mscl_event* const events)
+extern mscl_time mscl_estimate(const size_t num_events, const mscl_event* const events, const size_t loops)
 {
 	mscl_time time = 0.0;
     mscl_time length = 0.0;
 
-	for (size_t i = 0; i < num_events; ++i)
+    size_t loop_event[MSCL_MAX_LOOPS] = {0};
+	size_t loop_count[MSCL_MAX_LOOPS] = {0};
+	size_t loop_iters[MSCL_MAX_LOOPS] = {0};
+	size_t loop_idx = 0;
+
+	for (size_t event_idx = 0; event_idx < num_events; ++event_idx)
 	{
-        if (events[i].type == mscl_event_length)
-            length = events[i].data.length;
-        
-        if (events[i].type == mscl_event_tone)
+        if (events[event_idx].type == mscl_event_loop_begin)
+        {
+            if (loop_idx < MSCL_MAX_LOOPS)
+            {
+                loop_event[loop_idx] = event_idx;
+                loop_count[loop_idx] = events[event_idx].data.loop_begin;
+                loop_iters[loop_idx] = 0;
+                ++loop_idx;
+            }
+        }
+        else if (events[event_idx].type == mscl_event_loop_end)
+        {
+            if (loop_idx > 0)
+            {
+                --loop_idx;
+                ++loop_iters[loop_idx];
+                if (loop_iters[loop_idx] <= loop_count[loop_idx])
+                {
+                    if ((loop_count[loop_idx] == MSCL_LOOP_INFINITE) && (loop_iters[loop_idx] > loops)) break;
+                    event_idx = loop_event[loop_idx];
+                    ++loop_idx;
+                }
+            }
+        }
+        else if (events[event_idx].type == mscl_event_length)
+        {
+            length = events[event_idx].data.length;
+        }
+        else if (events[event_idx].type == mscl_event_tone)
+        {
             time += length;
+        }
 	}
 	return time;
 }
@@ -45,6 +77,29 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
         const mscl_event* const event = events + engine->event_idx;
         switch (event->type)
         {
+            case mscl_event_loop_begin:
+                if (engine->loop_idx < MSCL_MAX_LOOPS)
+                {
+                    engine->loop_event[engine->loop_idx] = engine->event_idx;
+                    engine->loop_count[engine->loop_idx] = event->data.loop_begin;
+                    engine->loop_iters[engine->loop_idx] = 0;
+                    ++engine->loop_idx;
+                }
+            break;
+
+            case mscl_event_loop_end:
+                if (engine->loop_idx > 0)
+                {
+                    --engine->loop_idx;
+                    ++engine->loop_iters[engine->loop_idx];
+                    if (engine->loop_iters[engine->loop_idx] <= engine->loop_count[engine->loop_idx])
+                    {
+                        engine->event_idx = engine->loop_event[engine->loop_idx];
+                        ++engine->loop_idx;
+                    }
+                }
+            break;
+
             case mscl_event_tone:
                 if (event->data.tone != MSCL_REST)
                 {

@@ -66,6 +66,8 @@ enum mscl_event_type
 	mscl_event_tone,
 	mscl_event_length,
 	mscl_event_volume,
+	mscl_event_loop_begin,
+	mscl_event_loop_end,
 	mscl_event_waveform,
 	mscl_event_sustain,
 	mscl_event_release,
@@ -78,6 +80,7 @@ union mscl_event_data
 	mscl_sample tone;
 	mscl_time length;
 	mscl_sample volume;
+	size_t loop_begin;
 	mscl_envelope* waveform;
 	mscl_envelope* sustain;
 	mscl_envelope* release;
@@ -92,10 +95,17 @@ struct mscl_event
 };
 typedef struct mscl_event mscl_event;
 
+#define MSCL_MAX_LOOPS 4
+#define MSCL_LOOP_INFINITE ((size_t)-1)
+
 struct mscl_engine
 {
 	size_t sample_idx;
 	size_t event_idx;
+
+	size_t loop_event[MSCL_MAX_LOOPS];
+	size_t loop_count[MSCL_MAX_LOOPS];
+	size_t loop_iters[MSCL_MAX_LOOPS];
 	size_t loop_idx;
 	
 	mscl_envelope* waveform;
@@ -117,7 +127,7 @@ extern
 #ifdef __cplusplus
 "C"
 #endif
-mscl_time mscl_estimate(size_t num_events, const mscl_event* events);
+mscl_time mscl_estimate(size_t num_events, const mscl_event* events, size_t loops);
 
 extern
 #ifdef __cplusplus

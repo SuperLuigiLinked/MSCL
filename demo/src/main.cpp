@@ -16,10 +16,12 @@
 #include <chrono>
 #include <thread>
 
-static int play_song(const Song song)
+static int play_song(const Song song, const size_t loops = 0)
 {
 	const std::unique_ptr<Player> player{ player_xaudio2() };
 	if (!player) return EXIT_FAILURE;
+	
+	ASSERT(loops != MSCL_LOOP_INFINITE);
 
 	constexpr mscl_time sps = 44'100.0;
 
@@ -41,7 +43,7 @@ static int play_song(const Song song)
 	for (size_t i = 0; i < num_channels; ++i)
 	{
 		samplers[i].channel = song.channels.begin()[i];
-		samplers[i].song_len = mscl_estimate(samplers[i].channel.size(), samplers[i].channel.data());
+		samplers[i].song_len = mscl_estimate(samplers[i].channel.size(), samplers[i].channel.data(), loops);
 		if (samplers[i].song_len > max_len)
 		{
 			max_len = samplers[i].song_len;
@@ -83,5 +85,5 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 int main(void)
 #endif
 {
-	return play_song(song_Demo1);
+	return play_song(song_Demo1, 0);
 }

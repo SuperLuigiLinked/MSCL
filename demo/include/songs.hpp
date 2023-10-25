@@ -239,12 +239,15 @@ inline static constexpr Song CONCAT(song, SONG_NAME){ 60.0, {CONCAT(SONG_NAME, c
 #define SONG_NAME Menuet
 
 inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
+	mscl_event{mscl_event_loop_begin, {.loop_begin = MSCL_LOOP_INFINITE }},
+
 	mscl_event{mscl_event_volume, {.volume = 0.20f }},
 	mscl_event{mscl_event_sustain, {.sustain = env_fade_2 }},
 	mscl_event{mscl_event_release, {.release = rel_fade }},
 	mscl_event{mscl_event_vibrato, {.vibrato = vib_some }},
 	mscl_event{mscl_event_waveform, {.waveform = wav_pulse_25 }},
 
+	mscl_event{mscl_event_loop_begin, {.loop_begin = 1 }},
 	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 2.0) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_A) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_Cs) }},
@@ -258,9 +261,14 @@ inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_Cs) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_F) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_Cs) }},
+	mscl_event{mscl_event_loop_end, {}},
+	
+	mscl_event{mscl_event_loop_end, {}},
 };
 
 inline static constexpr std::array CONCAT(SONG_NAME, c1) = {
+	mscl_event{mscl_event_loop_begin, {.loop_begin = MSCL_LOOP_INFINITE }},
+
 	mscl_event{mscl_event_volume, {.volume = 0.20f }},
 	mscl_event{mscl_event_sustain, {.sustain = env_fade_2 }},
 	mscl_event{mscl_event_release, {.release = rel_fade }},
@@ -274,6 +282,16 @@ inline static constexpr std::array CONCAT(SONG_NAME, c1) = {
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(3, MSCL_Fs) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(3, MSCL_A) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_Cs) }},
+
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 1.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_Fs) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_D) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_Cs) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_Fs) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(3, MSCL_A) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_Cs) }},
+
+	mscl_event{mscl_event_loop_end, {}},
 };
 
 inline static constexpr Song CONCAT(song, SONG_NAME){ 148.0, {CONCAT(SONG_NAME, c0), CONCAT(SONG_NAME, c1)} }; 
