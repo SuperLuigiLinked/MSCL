@@ -41,8 +41,13 @@ class Demo : public olc::PixelGameEngine
 private:
 
 	inline static constexpr mscl_time sps = 48'000.0;
+	inline static constexpr std::array songs = {
+		song_Demo1,
+		song_Demo2,
+		song_Menuet,
+	};
 
-	Song song = song_Demo1;
+	size_t song_idx = 0;
 	size_t loops = 0;
 	
 	size_t main_channel = {};
@@ -53,6 +58,8 @@ private:
 	std::vector<float> samples = {};
 	std::vector<Sampler> samplers = {};
 
+	bool paused = false;
+
 private:
 
 	bool init_player()
@@ -61,18 +68,24 @@ private:
 		return bool(player);
 	}
 
-	void select_song(const Song track)
+	void select_song(const size_t idx)
 	{
-		song = track;
+		player->stop();
+		
+		ASSERT(idx < songs.size());
+		song_idx = idx;
+	}
 
-		const size_t num_channels = song.channels.size();
+	void init_samplers()
+	{
+		const size_t num_channels = songs[song_idx].channels.size();
 		samplers.clear();
 		samplers.resize(num_channels);
 
 		mscl_time max_len = 0.0;
 		for (size_t i = 0; i < num_channels; ++i)
 		{
-			samplers[i].channel = song.channels.begin()[i];
+			samplers[i].channel = songs[song_idx].channels.begin()[i];
 			samplers[i].song_len = mscl_estimate(samplers[i].channel.size(), samplers[i].channel.data(), loops);
 			if (samplers[i].song_len > max_len)
 			{
@@ -80,15 +93,17 @@ private:
 				main_channel = i;
 			}
 		}
-		speed = song.tempo / mscl_time(60.0);
+		speed = songs[song_idx].tempo / mscl_time(60.0);
 		song_len = max_len / speed;
 	}
 
 	void init_samples()
 	{
-		const size_t num_samples = size_t(sps * song_len);
+		player->stop();
+
+		init_samplers();
 		samples.clear();
-		samples.resize(num_samples);
+		samples.resize(size_t(song_len * sps));
 
 		for (float& sample : samples)
 		{
@@ -112,18 +127,55 @@ public:
 	bool OnUserCreate() final
 	{
 		if (!init_player()) return false;
-		select_song(song);
-		init_samples();
-
 		return true;
 	}
+	
 
 	bool OnUserUpdate(float fElapsedTime [[maybe_unused]]) final
 	{
 		// Update
 		{
+			using usize = size_t;
+			using isize = intptr_t;
+
+			const bool playing = player->playing();
+
 			if (this->GetKey(olc::Key::SPACE).bPressed)
-				player->play(samples.size(), samples.data(), sps);
+			{
+				if (!playing)
+				{
+					init_samples();
+					player->play(samples.size(), samples.data(), sps);
+					paused = false;
+				}
+				else
+				{
+					if (paused)
+						player->unpause();
+					else
+						player->pause();
+
+					paused = !paused;
+				}
+			}
+
+			if (this->GetKey(olc::Key::BACK).bPressed)
+			{
+				player->stop();
+				paused = false;
+			}
+
+			if (this->GetKey(olc::Key::LEFT).bPressed || this->GetKey(olc::Key::UP).bPressed)
+			{
+				select_song((usize)imodf(isize(song_idx - 1), isize(songs.size())));
+			}
+
+			if (this->GetKey(olc::Key::RIGHT).bPressed || this->GetKey(olc::Key::DOWN).bPressed)
+			{
+				select_song((usize)imodf(isize(song_idx + 1), isize(songs.size())));
+			}
+
+			if (!playing) paused = false;
 		}
 
 		// Render
@@ -138,14 +190,14 @@ public:
 			const size_t sample_pos = player->pos();
 			const bool playing = player->playing();
 			
-			this->DrawString({8, 8}, song.name, olc::WHITE, 2);
+			this->DrawString({8+16*0, 8+16*0}, songs[song_idx].name, olc::WHITE, 2);
 
 			if (playing)
 			{
 				for (int x = 0; x <= width; ++x)
 				{
-					const int px = x - 1;
-					const int nx = x;
+					const int px = x - (width / 2) - 1;
+					const int nx = x - (width / 2);
 
 					const size_t pi = sample_pos + size_t(px);
 					const size_t ni = sample_pos + size_t(nx);
@@ -155,20 +207,33 @@ public:
 
 					const int py = static_cast<int>(half + half * poffs);
 					const int ny = static_cast<int>(half + half * noffs);
-					this->DrawLine({px, py}, {nx, ny}, olc::Pixel(0xFF, 0xFF, 0xFF));
+					this->DrawLine({x-1, py}, {x, ny}, olc::Pixel(0xFF, 0xFF, 0xFF));
 				}
 			}
-			else
+
 			{
+				std::string msg{};
+				olc::Pixel color = olc::WHITE;
+
+				if (paused)
+				{
+					msg = "PAUSED";
+					color = olc::RED;
+				}
+				else if (!playing)
+				{
+					msg = "Press SPACE to play!";
+				}
+
 				constexpr float sc = 4.0f;
 				constexpr float fs = 8.0f;
 				const float ww = float(width);
 				const float wh = float(height);
-				const float tw = (sc * fs) * 20.0f;
+				const float tw = (sc * fs) * float(msg.size());
 				const float th = (sc * fs);
 				const float tx = (ww - tw) * 0.5f;
 				const float ty = (wh - th) * 0.5f;
-				this->DrawString({int(tx), int(ty)}, "Press SPACE to play!", olc::WHITE, uint32_t(sc));
+				this->DrawString({int(tx), int(ty)}, msg, color, uint32_t(sc));
 			}
 		}
 
