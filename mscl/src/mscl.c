@@ -1,5 +1,5 @@
 /**
- * @file mscl.c
+ * @file mscl/mscl.c
  *
  * @brief MuSiCaL: a Music Synthesis Coding Language
  */

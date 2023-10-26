@@ -1,19 +1,19 @@
 /**
- * @file demo/player_xaudio2.cpp
+ * @file mscl_player/xaudio2.cpp
  */
-
-#include "utils.h"
-#include "player.hpp"
-
-#include <mscl.h>
 
 #include <Windows.h>
 #include <xaudio2.h>
 #include <wrl/client.h>
-
 using Microsoft::WRL::ComPtr;
 
-class PlayerXAudio2 final : public Player
+#include <mscl.h>
+#include "mscl_player.hpp"
+#include "utils.hpp"
+
+// ================================================================================================================================
+
+class PlayerXAudio2 final : public mscl::Player
 {
 private:
 
@@ -46,7 +46,7 @@ public:
         if (mvoice) mvoice->DestroyVoice();
     }
 
-    void play(const size_t num_samples, const float* const samples, const mscl_time sps) final
+    void submit(const size_t num_samples, const float* const samples, const mscl_time sps) final
     {
         if (num_samples == 0) return;
         ASSERT(samples != nullptr);
@@ -96,8 +96,15 @@ public:
         const HRESULT res_submit = svoice->SubmitSourceBuffer(&buffer, nullptr);
         ASSERT(SUCCEEDED(res_submit));
 
-        const HRESULT res_start = svoice->Start(0, XAUDIO2_COMMIT_NOW);
-        ASSERT(SUCCEEDED(res_start));
+    }
+
+    void play() final
+    {
+        if (svoice)
+        {
+            const HRESULT res = svoice->Start(0, XAUDIO2_COMMIT_NOW);
+            ASSERT(SUCCEEDED(res));
+        }
     }
 
     void pause() final
@@ -105,15 +112,6 @@ public:
         if (svoice)
         {
             const HRESULT res = svoice->Stop(0, XAUDIO2_COMMIT_NOW);
-            ASSERT(SUCCEEDED(res));
-        }
-    }
-
-    void unpause() final
-    {
-        if (svoice)
-        {
-            const HRESULT res = svoice->Start(0, XAUDIO2_COMMIT_NOW);
             ASSERT(SUCCEEDED(res));
         }
     }
@@ -148,7 +146,9 @@ public:
     }
 };
 
-extern Player* player_xaudio2()
+extern mscl::Player* mscl::Player::xaudio2()
 {
     return new PlayerXAudio2();
 }
+
+// ================================================================================================================================

@@ -1,20 +1,4 @@
-# @file demo/CMakeLists.txt
-
-# ================================================================================================================================
-
-include(FetchContent)
-
-FetchContent_Declare(PGE
-    GIT_REPOSITORY "https://github.com/OneLoneCoder/olcPixelGameEngine"
-    GIT_TAG "v2.23"
-)
-FetchContent_MakeAvailable(PGE)
-FetchContent_GetProperties(PGE SOURCE_DIR PGE_SOURCE_DIR)
-
-add_library(olc_PGE INTERFACE "${PGE_SOURCE_DIR}/olcPixelGameEngine.h")
-add_library(olc::PGE ALIAS olc_PGE)
-
-target_include_directories(olc_PGE INTERFACE "${PGE_SOURCE_DIR}/")
+# @file mscl_demo/CMakeLists.txt
 
 # ================================================================================================================================
 
@@ -24,12 +8,11 @@ add_executable(mscl::demo ALIAS mscl_demo)
 target_include_directories(mscl_demo PUBLIC "include/")
 target_sources(mscl_demo
     PRIVATE
-        "include/utils.h"
-        "include/player.hpp"
         "src/main.cpp"
-        "src/player_xaudio2.cpp"
+        "include/instruments.hpp"
+        "include/songs.hpp"
 )
-target_link_libraries(mscl_demo mscl::mscl olc::PGE)
+target_link_libraries(mscl_demo mscl::mscl mscl::player)
 
 target_compile_features(mscl_demo PRIVATE cxx_std_23)
 

@@ -8,9 +8,9 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/build/demo/mscl_demo",
+            "program": "${workspaceFolder}/build/mscl_demo/mscl_demo",
             "osx": {
-                "program": "${workspaceFolder}/build/demo/mscl_demo.app"
+                "program": "${workspaceFolder}/build/mscl_demo/mscl_demo.app"
             },
             "args": [],
             "cwd": "${workspaceFolder}",

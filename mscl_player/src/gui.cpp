@@ -1,21 +1,8 @@
 /**
- * @file demo/main.cpp
+ * @file mscl_player/gui.cpp
  *
  * @brief Demo Program for MSCL library.
  */
-
-#include <mscl.h>
-
-#include "utils.h"
-#include "player.hpp"
-#include "songs.hpp"
-
-#include <span>
-#include <vector>
-#include <memory>
-#include <chrono>
-#include <thread>
-#include <format>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
@@ -23,11 +10,21 @@
 #include <olcPixelGameEngine.h>
 #pragma clang diagnostic pop
 
+#include <vector>
+#include <memory>
+#include <chrono>
+#include <thread>
+#include <format>
+
+#include <mscl.h>
+#include "mscl_player.hpp"
+#include "utils.hpp"
+
 // ================================================================================================================================
 
 struct Sampler
 {
-	Channel channel;
+	mscl::Channel channel;
 	mscl_time song_len;
 
 	mscl_sample sample;
@@ -48,27 +45,21 @@ inline static std::string time_format(const mscl_time seconds)
 
 // ================================================================================================================================
 
-class Demo : public olc::PixelGameEngine
+class MsclGUI : public olc::PixelGameEngine
 {
 private:
 
 	inline static constexpr mscl_time sps = 48'000.0;
-	inline static constexpr std::array songs = {
-		song_Demo1,
-		song_Demo2,
-		song_Menuet,
-		song_HappySynth,
-		song_Ghostbusters,
-	};
-
-	size_t song_idx = size_t(0);
+	
+	std::span<const mscl::Song> songs = {};
+	size_t song_idx = {};
 	size_t loops = 0;
 	
 	size_t main_channel = {};
 	mscl_time speed = {};
 	mscl_time song_len = {};
 
-	std::unique_ptr<Player> player = {};
+	std::unique_ptr<mscl::Player> player = {};
 	std::vector<float> samples = {};
 	std::vector<Sampler> samplers = {};
 
@@ -79,22 +70,21 @@ private:
 
 	bool init_player()
 	{
-		this->player.reset(player_xaudio2());
+		this->player.reset(mscl::Player::xaudio2());
 		select_song(song_idx);
 
 		return bool(player);
 	}
 
-	void select_song(const size_t idx)
+	void select_song(size_t idx)
 	{
 		player->stop();
 		
-		using usize = size_t;
-		using isize = intptr_t;
-		song_idx = usize(imodf(isize(idx), isize(songs.size())));
+		const size_t num_songs = songs.size();
+		while (intptr_t(idx) < 0) idx += num_songs;
+		idx %= num_songs;
 
-		ASSERT(song_idx < songs.size());
-
+		song_idx = idx;
 		init_samplers();
 	}
 
@@ -146,14 +136,17 @@ private:
 
 public:
 
-	Demo()
+	MsclGUI(const std::span<const mscl::Song> song_list)
+		:
+		songs{ song_list }
 	{
-		this->sAppName = "MuSiCaL Demo";
+		this->sAppName = "MuSiCaL Player";
 	}
 
 	bool OnUserCreate() final
 	{
 		if (!init_player()) return false;
+		select_song(song_idx);
 		return true;
 	}
 
@@ -167,8 +160,9 @@ public:
 			{
 				init_samples();
 				reset_engines();
-
-				player->play(samples.size(), samples.data(), sps);
+				
+				player->submit(samples.size(), samples.data(), sps);
+				player->play();
 				paused = false;
 
 				loading = false;
@@ -183,7 +177,7 @@ public:
 				else
 				{
 					if (paused)
-						player->unpause();
+						player->play();
 					else
 						player->pause();
 
@@ -212,28 +206,36 @@ public:
 
 		// Render
 		{
+			constexpr int font = 8;
+
 			this->Clear(olc::Pixel(0x18, 0x18, 0x18));
-			const auto [width, height] = this->GetWindowSize();
+			const auto [scw, sch] = this->GetScreenSize();
 
-			this->DrawLine({0, height / 2}, {width, height / 2}, olc::Pixel(0x40, 0x40, 0x40));
+			this->DrawLine({0, sch / 2}, {scw, sch / 2}, olc::Pixel(0x40, 0x40, 0x40));
 
-			const float half = float(height) / 2;
+			const float half = float(sch) / 2;
 			const size_t num_samples = samples.size();
 			const size_t sample_pos = player->pos();
 			const bool playing = player->playing();
 			const mscl_time seconds = mscl_time(sample_pos) / sps;
 			
-			const std::string numbers = std::format("<{}:{}>", song_idx + 1, songs.size());
-			this->DrawString({8+16*0, 8+24*0}, numbers, olc::DARK_GREY, 2);
-			this->DrawString({8+16*(int(numbers.size())+1), 8+24*0}, songs[song_idx].name, olc::WHITE, 2);
-			this->DrawString({8+16*0, 8+24*1},  std::format("{} / {}", time_format(seconds), time_format(song_len)), olc::Pixel(0xA0, 0xA0, 0xA0), 2);
+			const std::string track = std::format("<{}:{}>", song_idx + 1, songs.size());
+			const std::string label = std::format(" {}", songs[song_idx].name);
+			const std::string times = std::format("{} / {}", time_format(seconds), time_format(song_len));
+			const int len_ui = int(std::max(track.size() + label.size(), times.size()));
+			const float ui_limit = float(scw) / float(font * len_ui);
+			const int scale_ui = std::clamp(int(ui_limit), 1, 2);
 
+			this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*0}, track, olc::DARK_GREY, uint32_t(scale_ui));
+			this->DrawString({font+(font*scale_ui)*int(track.size()), font+(font+font*scale_ui)*0}, label, olc::WHITE, uint32_t(scale_ui));
+			this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*1}, times, olc::Pixel(0xA0, 0xA0, 0xA0), uint32_t(scale_ui));
+			
 			if (playing)
 			{
-				for (int x = 0; x <= width; ++x)
+				for (int x = 0; x <= scw; ++x)
 				{
-					const int px = x - (width / 2) - 1;
-					const int nx = x - (width / 2);
+					const int px = x - (scw / 2) - 1;
+					const int nx = x - (scw / 2);
 
 					const size_t pi = sample_pos + size_t(px);
 					const size_t ni = sample_pos + size_t(nx);
@@ -266,15 +268,15 @@ public:
 					msg = "Press SPACE to play!";
 				}
 
-				constexpr float sc = 4.0f;
-				constexpr float fs = 8.0f;
-				const float ww = float(width);
-				const float wh = float(height);
-				const float tw = (sc * fs) * float(msg.size());
-				const float th = (sc * fs);
-				const float tx = (ww - tw) * 0.5f;
-				const float ty = (wh - th) * 0.5f;
-				this->DrawString({int(tx), int(ty)}, msg, color, uint32_t(sc));
+				const int chars = int(msg.size());
+				const float x_limit = float(scw) / float(font * chars);
+				const float y_limit = float(sch) / float(font * 1);
+				const int scale = std::clamp(std::min(int(x_limit), int(y_limit)), 1, 4);
+				const int tw = (scale * font) * chars;
+				const int th = (scale * font) * 1;
+				const int tx = (scw - tw) / 2;
+				const int ty = (sch - th) / 2;
+				this->DrawString({tx, ty}, msg, color, uint32_t(scale));
 			}
 		}
 
@@ -284,23 +286,16 @@ public:
 
 // ================================================================================================================================
 
-static int olc_main()
+namespace mscl
 {
-	Demo demo = {};
-	if (!demo.Construct(1280, 720, 1, 1, false, true)) return EXIT_FAILURE;
+	extern int gui(std::span<const mscl::Song> song_list, const int width, const int height, const bool fullscreen)
+	{
+		MsclGUI demo{ song_list };
+		if (!demo.Construct(width, height, 1, 1, fullscreen, true)) return EXIT_FAILURE;
 
-	demo.Start();
-	return EXIT_SUCCESS;
-}
-
-#ifdef _WIN32
-#   include <Windows.h>
-int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
-#else
-int main(void)
-#endif
-{
-	return olc_main();
+		demo.Start();
+		return EXIT_SUCCESS;
+	}
 }
 
 // ================================================================================================================================
