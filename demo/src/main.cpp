@@ -58,6 +58,7 @@ private:
 		song_Demo2,
 		song_Menuet,
 		song_HappySynth,
+		song_Ghostbusters,
 	};
 
 	size_t song_idx = size_t(0);
