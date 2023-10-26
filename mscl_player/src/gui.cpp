@@ -52,7 +52,7 @@ private:
 	inline static constexpr mscl_time sps = 48'000.0;
 	
 	std::span<const mscl::Song> songs = {};
-	size_t song_idx = {};
+	size_t song_idx = size_t(-1);
 	size_t loaded_idx = size_t(-1);
 	bool loop = {};
 	
@@ -72,45 +72,45 @@ private:
 	bool init_player()
 	{
 		this->player.reset(mscl::Player::xaudio2());
-		select_song(song_idx);
+		select_song(0);
 		return bool(player);
 	}
 
 	void select_song(size_t idx)
 	{
-		player->stop();
-		
 		const size_t num_songs = songs.size();
-		while (intptr_t(idx) < 0) idx += num_songs;
-		idx %= num_songs;
+		idx = size_t((intptr_t(idx) % intptr_t(num_songs)) + intptr_t(num_songs) * (intptr_t(idx) % intptr_t(num_songs) < 0));
+		ASSERT(idx < num_songs);
 
-		song_idx = idx;
-		init_samplers();
+		if (song_idx != idx)
+		{
+			player->stop();
+
+			song_idx = idx;
+			init_samplers();
+		}
 	}
 
 	void init_samplers()
 	{
-		if (loaded_idx != song_idx)
-		{
-			const size_t num_channels = songs[song_idx].channels.size();
-			samplers.clear();
-			samplers.resize(num_channels);
+		const size_t num_channels = songs[song_idx].channels.size();
+		samplers.clear();
+		samplers.resize(num_channels);
 
-			mscl_time max_len = 0.0;
-			for (size_t i = 0; i < num_channels; ++i)
+		mscl_time max_len = 0.0;
+		for (size_t i = 0; i < num_channels; ++i)
+		{
+			samplers[i].channel = songs[song_idx].channels.begin()[i];
+			samplers[i].metadata = mscl_estimate(samplers[i].channel.size(), samplers[i].channel.data());
+			const mscl_time channel_len = samplers[i].metadata.intro_seconds + samplers[i].metadata.loop_seconds;
+			if (channel_len > max_len)
 			{
-				samplers[i].channel = songs[song_idx].channels.begin()[i];
-				samplers[i].metadata = mscl_estimate(samplers[i].channel.size(), samplers[i].channel.data());
-				const mscl_time channel_len = samplers[i].metadata.intro_seconds + samplers[i].metadata.loop_seconds;
-				if (channel_len > max_len)
-				{
-					max_len = channel_len;
-					main_channel = i;
-				}
+				max_len = channel_len;
+				main_channel = i;
 			}
-			speed = songs[song_idx].tempo / mscl_time(60.0);
-			song_len = max_len / speed;
 		}
+		speed = songs[song_idx].tempo / mscl_time(60.0);
+		song_len = max_len / speed;
 	}
 
 	void reset_engines()
@@ -161,16 +161,29 @@ public:
 	{
 		// Update
 		{
-			const bool playing = player->playing();
+			bool playing = player->playing();
+
+			if (this->GetKey(olc::Key::BACK).bPressed)
+			{
+				paused = false;
+				playing = false;
+
+				player->stop();
+			}
 
 			if (loading || (!playing && loop))
 			{
 				init_samples();
-				paused = false;
-				loading = false;
 				loaded_idx = song_idx;
+				loading = false;
+				paused = false;
+				playing = true;
 
-				player->submit(samples.size(), samples.data(), sps);
+				constexpr double offs_pc = 0.625;
+				const size_t offs_sp = size_t(double(samples.size()) * offs_pc);
+				const size_t size = samples.size() - offs_sp;
+				const float* const data = samples.data() + offs_sp;
+				player->submit(size, data, sps);
 				player->play();
 			}
 			
@@ -194,12 +207,7 @@ public:
 			if (this->GetKey(olc::Key::ENTER).bPressed)
 			{
 				loop = !loop;
-			}
-
-			if (this->GetKey(olc::Key::BACK).bPressed)
-			{
-				player->stop();
-				paused = false;
+				if (!playing && loop) loading = true;
 			}
 
 			if (this->GetKey(olc::Key::LEFT).bPressed || this->GetKey(olc::Key::UP).bPressed)
@@ -244,7 +252,7 @@ public:
 			this->DrawString({font+(font*scale_ui)*int(track.size()), font+(font+font*scale_ui)*0}, label, olc::WHITE, uint32_t(scale_ui));
 			this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*1}, times, timer_color, uint32_t(scale_ui));
 			
-			if (playing)
+			if (playing && !loading)
 			{
 				for (int x = 0; x <= scw; ++x)
 				{
@@ -267,7 +275,7 @@ public:
 				std::string msg{};
 				olc::Pixel color = olc::WHITE;
 
-				if (loading)
+				if (loading || (loop & !playing))
 				{
 					msg = "LOADING...";
 					color = olc::GREY;
@@ -293,7 +301,6 @@ public:
 				this->DrawString({tx, ty}, msg, color, uint32_t(scale));
 			}
 		}
-
 		return true;
 	}
 };
