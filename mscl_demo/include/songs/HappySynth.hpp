@@ -27,10 +27,10 @@ inline static constexpr mscl_event c0[] = {
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_C) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_F) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_F) }},
-	{mscl_event_tone, {.tone = MSCL_REST }},
-	{mscl_event_tone, {.tone = MSCL_REST }},
-	{mscl_event_tone, {.tone = MSCL_REST }},
-	{mscl_event_tone, {.tone = MSCL_REST }},
+	{mscl_event_rest, {}},
+	{mscl_event_rest, {}},
+	{mscl_event_rest, {}},
+	{mscl_event_rest, {}},
 };
 
 // --------------------------------------------------------------------------------------------------------------------------------

@@ -11,16 +11,27 @@
 #ifndef MSCL_H
 #define MSCL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef float mscl_sample;
 typedef float mscl_time;
+typedef mscl_sample (mscl_envelope)(mscl_time seconds);
 
 #define MSCL_PI 3.14159265358979323846
 #define MSCL_TAU 6.28318530717958647692
 
+#define MSCL_MAX_LOOPS 4
+#define MSCL_LOOP_INFINITE ((size_t)-1)
+
+#define MSCL_TONE(octave, note) ((mscl_sample)(octave) + ((mscl_sample)(note) / (mscl_sample)(12)))
+#define MSCL_FREQ(tone) ((mscl_sample)(13.75) * (mscl_sample)(MSCL_POW((mscl_sample)(2), (mscl_sample)(tone))))
+
 #ifdef __cplusplus
-#	define mscl_pow(base, exp) pow(base, exp)
+#	define MSCL_POW(base, exp) pow(base, exp)
 #else
-#	define mscl_pow(base, exp) _Generic((base + exp), float: powf(base, exp), double: pow(base, exp), long double: powl(base, exp), default: pow(base, exp))
+#	define MSCL_POW(base, exp) _Generic((base + exp), float: powf(base, exp), double: pow(base, exp), long double: powl(base, exp), default: pow(base, exp))
 #endif
 
 enum mscl_note
@@ -55,19 +66,14 @@ enum mscl_note
 };
 typedef enum mscl_note mscl_note;
 
-#define MSCL_TONE(octave, note) ((mscl_sample)(octave) + ((mscl_sample)(note) / (mscl_sample)(12)))
-#define MSCL_FREQ(tone) ((mscl_sample)(13.75) * (mscl_sample)(mscl_pow((mscl_sample)(2), (mscl_sample)(tone))))
-#define MSCL_REST ((mscl_sample)0)
-
-typedef mscl_sample (mscl_envelope)(mscl_time seconds);
-
 enum mscl_event_type
 {
+	mscl_event_rest,
 	mscl_event_tone,
 	mscl_event_length,
-	mscl_event_volume,
 	mscl_event_loop_begin,
 	mscl_event_loop_end,
+	mscl_event_volume,
 	mscl_event_waveform,
 	mscl_event_sustain,
 	mscl_event_release,
@@ -95,9 +101,6 @@ struct mscl_event
 };
 typedef struct mscl_event mscl_event;
 
-#define MSCL_MAX_LOOPS 4
-#define MSCL_LOOP_INFINITE ((size_t)-1)
-
 struct mscl_engine
 {
 	size_t sample_idx;
@@ -123,16 +126,19 @@ struct mscl_engine
 };
 typedef struct mscl_engine mscl_engine;
 
-extern
-#ifdef __cplusplus
-"C"
-#endif
-mscl_time mscl_estimate(size_t num_events, const mscl_event* events, size_t loops);
+struct mscl_metadata
+{
+	mscl_time intro_seconds;
+	mscl_time loop_seconds;
+};
+typedef struct mscl_metadata mscl_metadata;
 
-extern
+extern mscl_metadata mscl_estimate(size_t num_events, const mscl_event* events);
+
+extern mscl_sample mscl_advance(mscl_engine* engine, mscl_time sps, mscl_time speed, size_t num_events, const mscl_event* events);
+
 #ifdef __cplusplus
-"C"
+}
 #endif
-mscl_sample mscl_advance(mscl_engine* engine, mscl_time sps, mscl_time speed, size_t num_events, const mscl_event* events);
 
 #endif

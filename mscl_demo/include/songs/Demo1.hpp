@@ -20,7 +20,7 @@ inline static constexpr mscl_event c0[] = {
 	{mscl_event_waveform, {.waveform = wav_saw }},
 	{mscl_event_length, {.length = mscl_time(1.0 / 4.0) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_C) }},
-	{mscl_event_tone, {.tone = MSCL_REST }},
+	{mscl_event_rest, {}},
 	{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_E) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_F) }},
@@ -28,7 +28,7 @@ inline static constexpr mscl_event c0[] = {
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_B) }},
 	{mscl_event_length, {.length = mscl_time(1.0 / 2.0) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(6, MSCL_C) }},
-	{mscl_event_tone, {.tone = MSCL_REST }},
+	{mscl_event_rest, {}},
 };
 
 // --------------------------------------------------------------------------------------------------------------------------------

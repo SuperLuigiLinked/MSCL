@@ -18,7 +18,7 @@
     #define DBG_ASSERT(expr) (void)0
 #endif
 
-extern mscl_time mscl_estimate(const size_t num_events, const mscl_event* const events, const size_t loops)
+extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* const events)
 {
 	mscl_time time = 0.0;
     mscl_time length = 0.0;
@@ -28,42 +28,56 @@ extern mscl_time mscl_estimate(const size_t num_events, const mscl_event* const 
 	size_t loop_iters[MSCL_MAX_LOOPS] = {0};
 	size_t loop_idx = 0;
 
+    mscl_metadata metadata = {0};
+
 	for (size_t event_idx = 0; event_idx < num_events; ++event_idx)
 	{
-        if (events[event_idx].type == mscl_event_loop_begin)
+        switch (events[event_idx].type)
         {
+        case mscl_event_rest:
+        case mscl_event_tone:
+            time += length;
+        break;
+
+        case mscl_event_length:
+            length = events[event_idx].data.length;
+        break;
+
+        case mscl_event_loop_begin:
             if (loop_idx < MSCL_MAX_LOOPS)
             {
                 loop_event[loop_idx] = event_idx;
                 loop_count[loop_idx] = events[event_idx].data.loop_begin;
                 loop_iters[loop_idx] = 0;
+                if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) metadata.intro_seconds = time;
                 ++loop_idx;
             }
-        }
-        else if (events[event_idx].type == mscl_event_loop_end)
-        {
+        break;
+
+        case mscl_event_loop_end:
             if (loop_idx > 0)
             {
                 --loop_idx;
                 ++loop_iters[loop_idx];
                 if (loop_iters[loop_idx] <= loop_count[loop_idx])
                 {
-                    if ((loop_count[loop_idx] == MSCL_LOOP_INFINITE) && (loop_iters[loop_idx] > loops)) break;
+                    if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) break;
                     event_idx = loop_event[loop_idx];
                     ++loop_idx;
                 }
             }
-        }
-        else if (events[event_idx].type == mscl_event_length)
-        {
-            length = events[event_idx].data.length;
-        }
-        else if (events[event_idx].type == mscl_event_tone)
-        {
-            time += length;
+        break;
+
+	    case mscl_event_volume:
+	    case mscl_event_waveform:
+	    case mscl_event_sustain:
+	    case mscl_event_release:
+	    case mscl_event_vibrato:
+        break;
         }
 	}
-	return time;
+    metadata.loop_seconds = time - metadata.intro_seconds;
+	return metadata;
 }
 
 extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, const mscl_time speed, const size_t num_events, const mscl_event* const events)
@@ -77,6 +91,21 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
         const mscl_event* const event = events + engine->event_idx;
         switch (event->type)
         {
+            case mscl_event_rest:
+                engine->next_event += engine->length;
+            break;
+
+            case mscl_event_tone:
+                engine->event_s = engine->next_event;
+                engine->event_r = engine->next_event + engine->length;
+                engine->frequency = MSCL_FREQ(event->data.tone);
+                engine->next_event += engine->length;
+            break;
+
+            case mscl_event_length:
+                engine->length = event->data.length;
+            break;
+            
             case mscl_event_loop_begin:
                 if (engine->loop_idx < MSCL_MAX_LOOPS)
                 {
@@ -100,24 +129,10 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
                 }
             break;
 
-            case mscl_event_tone:
-                if (event->data.tone != MSCL_REST)
-                {
-                    engine->event_s = engine->next_event;
-                    engine->event_r = engine->next_event + engine->length;
-                    engine->frequency = MSCL_FREQ(event->data.tone);
-                }
-                engine->next_event += engine->length;
-            break;
-
-            case mscl_event_length:
-                engine->length = event->data.length;
-            break;
-            
             case mscl_event_volume:
                 engine->volume = event->data.volume;
             break;
-            
+
             case mscl_event_waveform:
                 engine->waveform = event->data.waveform;
             break;

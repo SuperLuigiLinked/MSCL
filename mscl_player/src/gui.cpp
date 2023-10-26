@@ -25,7 +25,7 @@
 struct Sampler
 {
 	mscl::Channel channel;
-	mscl_time song_len;
+	mscl_metadata metadata;
 
 	mscl_sample sample;
 	mscl_engine engine;
@@ -53,7 +53,8 @@ private:
 	
 	std::span<const mscl::Song> songs = {};
 	size_t song_idx = {};
-	size_t loops = 0;
+	size_t loaded_idx = size_t(-1);
+	bool loop = {};
 	
 	size_t main_channel = {};
 	mscl_time speed = {};
@@ -72,7 +73,6 @@ private:
 	{
 		this->player.reset(mscl::Player::xaudio2());
 		select_song(song_idx);
-
 		return bool(player);
 	}
 
@@ -90,23 +90,27 @@ private:
 
 	void init_samplers()
 	{
-		const size_t num_channels = songs[song_idx].channels.size();
-		samplers.clear();
-		samplers.resize(num_channels);
-
-		mscl_time max_len = 0.0;
-		for (size_t i = 0; i < num_channels; ++i)
+		if (loaded_idx != song_idx)
 		{
-			samplers[i].channel = songs[song_idx].channels.begin()[i];
-			samplers[i].song_len = mscl_estimate(samplers[i].channel.size(), samplers[i].channel.data(), loops);
-			if (samplers[i].song_len > max_len)
+			const size_t num_channels = songs[song_idx].channels.size();
+			samplers.clear();
+			samplers.resize(num_channels);
+
+			mscl_time max_len = 0.0;
+			for (size_t i = 0; i < num_channels; ++i)
 			{
-				max_len = samplers[i].song_len;
-				main_channel = i;
+				samplers[i].channel = songs[song_idx].channels.begin()[i];
+				samplers[i].metadata = mscl_estimate(samplers[i].channel.size(), samplers[i].channel.data());
+				const mscl_time channel_len = samplers[i].metadata.intro_seconds + samplers[i].metadata.loop_seconds;
+				if (channel_len > max_len)
+				{
+					max_len = channel_len;
+					main_channel = i;
+				}
 			}
+			speed = songs[song_idx].tempo / mscl_time(60.0);
+			song_len = max_len / speed;
 		}
-		speed = songs[song_idx].tempo / mscl_time(60.0);
-		song_len = max_len / speed;
 	}
 
 	void reset_engines()
@@ -116,21 +120,24 @@ private:
 
 	void init_samples()
 	{
-		player->stop();
-
-		reset_engines();
-		samples.clear();
-		samples.resize(size_t(song_len * sps));
-
-		for (float& sample : samples)
+		if (loaded_idx != song_idx)
 		{
-			mscl_sample data = 0.0;
-			for (Sampler& sampler : samplers)
+			player->stop();
+
+			reset_engines();
+			samples.clear();
+			samples.resize(size_t(song_len * sps));
+
+			for (float& sample : samples)
 			{
-				sampler.sample = mscl_advance(&sampler.engine, sps, speed, sampler.channel.size(), sampler.channel.data());
-				data += sampler.sample;
+				mscl_sample data = 0.0;
+				for (Sampler& sampler : samplers)
+				{
+					sampler.sample = mscl_advance(&sampler.engine, sps, speed, sampler.channel.size(), sampler.channel.data());
+					data += sampler.sample;
+				}
+				sample = float(data);
 			}
-			sample = float(data);
 		}
 	}
 
@@ -156,16 +163,15 @@ public:
 		{
 			const bool playing = player->playing();
 
-			if (loading)
+			if (loading || (!playing && loop))
 			{
 				init_samples();
-				reset_engines();
-				
+				paused = false;
+				loading = false;
+				loaded_idx = song_idx;
+
 				player->submit(samples.size(), samples.data(), sps);
 				player->play();
-				paused = false;
-
-				loading = false;
 			}
 			
 			if (this->GetKey(olc::Key::SPACE).bPressed)
@@ -185,6 +191,11 @@ public:
 				}
 			}
 
+			if (this->GetKey(olc::Key::ENTER).bPressed)
+			{
+				loop = !loop;
+			}
+
 			if (this->GetKey(olc::Key::BACK).bPressed)
 			{
 				player->stop();
@@ -194,13 +205,14 @@ public:
 			if (this->GetKey(olc::Key::LEFT).bPressed || this->GetKey(olc::Key::UP).bPressed)
 			{
 				select_song(song_idx - 1);
+				if (loop) loading = true;
 			}
 
 			if (this->GetKey(olc::Key::RIGHT).bPressed || this->GetKey(olc::Key::DOWN).bPressed)
 			{
 				select_song(song_idx + 1);
+				if (loop) loading = true;
 			}
-
 			if (!playing) paused = false;
 		}
 
@@ -226,9 +238,11 @@ public:
 			const float ui_limit = float(scw) / float(font * len_ui);
 			const int scale_ui = std::clamp(int(ui_limit), 1, 2);
 
+			const olc::Pixel timer_color = (loop ? olc::Pixel(0x00, 0xFF, 0x00) : olc::Pixel(0xA0, 0xA0, 0xA0));
+
 			this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*0}, track, olc::DARK_GREY, uint32_t(scale_ui));
 			this->DrawString({font+(font*scale_ui)*int(track.size()), font+(font+font*scale_ui)*0}, label, olc::WHITE, uint32_t(scale_ui));
-			this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*1}, times, olc::Pixel(0xA0, 0xA0, 0xA0), uint32_t(scale_ui));
+			this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*1}, times, timer_color, uint32_t(scale_ui));
 			
 			if (playing)
 			{
