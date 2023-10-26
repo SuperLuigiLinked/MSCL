@@ -34,6 +34,18 @@ struct Sampler
 	mscl_engine engine;
 };
 
+inline static std::string time_format(const mscl_time seconds)
+{
+	const mscl_time tm = std::floor(seconds / mscl_time(60));
+	const mscl_time ts = std::floor(seconds) - mscl_time(60) * tm;
+	const mscl_time tf = std::floor((seconds - std::floor(seconds)) * mscl_time(1'000));
+
+	if (tm > 0)
+		return std::format("{}:{:02}.{:03}", tm, ts, tf);
+	else
+		return std::format("{}.{:03}", ts, tf);
+}
+
 // ================================================================================================================================
 
 class Demo : public olc::PixelGameEngine
@@ -45,9 +57,10 @@ private:
 		song_Demo1,
 		song_Demo2,
 		song_Menuet,
+		song_HappySynth,
 	};
 
-	size_t song_idx = 0;
+	size_t song_idx = size_t(0);
 	size_t loops = 0;
 	
 	size_t main_channel = {};
@@ -59,12 +72,15 @@ private:
 	std::vector<Sampler> samplers = {};
 
 	bool paused = false;
+	bool loading = false;
 
 private:
 
 	bool init_player()
 	{
 		this->player.reset(player_xaudio2());
+		select_song(song_idx);
+
 		return bool(player);
 	}
 
@@ -72,8 +88,13 @@ private:
 	{
 		player->stop();
 		
-		ASSERT(idx < songs.size());
-		song_idx = idx;
+		using usize = size_t;
+		using isize = intptr_t;
+		song_idx = usize(imodf(isize(idx), isize(songs.size())));
+
+		ASSERT(song_idx < songs.size());
+
+		init_samplers();
 	}
 
 	void init_samplers()
@@ -97,11 +118,16 @@ private:
 		song_len = max_len / speed;
 	}
 
+	void reset_engines()
+	{
+		for (Sampler& sampler : samplers) sampler.engine = mscl_engine{};
+	}
+
 	void init_samples()
 	{
 		player->stop();
 
-		init_samplers();
+		reset_engines();
 		samples.clear();
 		samples.resize(size_t(song_len * sps));
 
@@ -129,24 +155,29 @@ public:
 		if (!init_player()) return false;
 		return true;
 	}
-	
 
 	bool OnUserUpdate(float fElapsedTime [[maybe_unused]]) final
 	{
 		// Update
 		{
-			using usize = size_t;
-			using isize = intptr_t;
-
 			const bool playing = player->playing();
 
+			if (loading)
+			{
+				init_samples();
+				reset_engines();
+
+				player->play(samples.size(), samples.data(), sps);
+				paused = false;
+
+				loading = false;
+			}
+			
 			if (this->GetKey(olc::Key::SPACE).bPressed)
 			{
 				if (!playing)
 				{
-					init_samples();
-					player->play(samples.size(), samples.data(), sps);
-					paused = false;
+					loading = true;
 				}
 				else
 				{
@@ -167,12 +198,12 @@ public:
 
 			if (this->GetKey(olc::Key::LEFT).bPressed || this->GetKey(olc::Key::UP).bPressed)
 			{
-				select_song((usize)imodf(isize(song_idx - 1), isize(songs.size())));
+				select_song(song_idx - 1);
 			}
 
 			if (this->GetKey(olc::Key::RIGHT).bPressed || this->GetKey(olc::Key::DOWN).bPressed)
 			{
-				select_song((usize)imodf(isize(song_idx + 1), isize(songs.size())));
+				select_song(song_idx + 1);
 			}
 
 			if (!playing) paused = false;
@@ -189,8 +220,12 @@ public:
 			const size_t num_samples = samples.size();
 			const size_t sample_pos = player->pos();
 			const bool playing = player->playing();
+			const mscl_time seconds = mscl_time(sample_pos) / sps;
 			
-			this->DrawString({8+16*0, 8+16*0}, songs[song_idx].name, olc::WHITE, 2);
+			const std::string numbers = std::format("<{}:{}>", song_idx + 1, songs.size());
+			this->DrawString({8+16*0, 8+24*0}, numbers, olc::DARK_GREY, 2);
+			this->DrawString({8+16*(int(numbers.size())+1), 8+24*0}, songs[song_idx].name, olc::WHITE, 2);
+			this->DrawString({8+16*0, 8+24*1},  std::format("{} / {}", time_format(seconds), time_format(song_len)), olc::Pixel(0xA0, 0xA0, 0xA0), 2);
 
 			if (playing)
 			{
@@ -215,7 +250,12 @@ public:
 				std::string msg{};
 				olc::Pixel color = olc::WHITE;
 
-				if (paused)
+				if (loading)
+				{
+					msg = "LOADING...";
+					color = olc::GREY;
+				}
+				else if (paused)
 				{
 					msg = "PAUSED";
 					color = olc::RED;

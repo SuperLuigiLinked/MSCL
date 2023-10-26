@@ -226,7 +226,7 @@ inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(2, MSCL_C) }},
 	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 8.0) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(2, MSCL_C) }},
-	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 2.0) }},
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 1.0) }},
 	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(3, MSCL_As) }},
 };
 
@@ -423,6 +423,35 @@ inline static constexpr std::array CONCAT(SONG_NAME, c1) = {
 };
 
 inline static constexpr Song CONCAT(song, SONG_NAME){ "Menuet", 148.0, {CONCAT(SONG_NAME, c0), CONCAT(SONG_NAME, c1)} }; 
+
+#undef SONG_NAME
+
+// ================================================================================================================================
+
+#define SONG_NAME HappySynth
+
+inline static constexpr std::array CONCAT(SONG_NAME, c0) = {
+	mscl_event{mscl_event_volume, {.volume = mscl_sample(0.10) }},
+	mscl_event{mscl_event_sustain, {.sustain = env_fade }},
+	mscl_event{mscl_event_release, {.release = rel_fade }},
+	mscl_event{mscl_event_vibrato, {.vibrato = vib_medium }},
+	mscl_event{mscl_event_waveform, {.waveform = wav_square }},
+	
+	mscl_event{mscl_event_length, {.length = mscl_time(1.0 / 3.0) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(3, MSCL_F) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_F) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(3, MSCL_F) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(6, MSCL_C) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_C) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_F) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_F) }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_REST }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_REST }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_REST }},
+	mscl_event{mscl_event_tone, {.tone = MSCL_REST }},
+};
+
+inline static constexpr Song CONCAT(song, SONG_NAME){ "Happy Synthesizer", 127.0, {CONCAT(SONG_NAME, c0)} }; 
 
 #undef SONG_NAME
 
