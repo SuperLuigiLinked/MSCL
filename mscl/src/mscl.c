@@ -104,8 +104,8 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
 					engine->loop_event[engine->loop_idx] = engine->event_idx;
 					engine->loop_count[engine->loop_idx] = event->data.loop_begin;
 					engine->loop_iters[engine->loop_idx] = 0;
-					++engine->loop_idx;
 				}
+				++engine->loop_idx;
 			break;
 
 			case mscl_event_loop_end:
