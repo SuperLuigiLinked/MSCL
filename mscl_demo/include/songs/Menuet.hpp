@@ -16,7 +16,7 @@ inline static constexpr mscl_event c0[] = {
 	{mscl_event_loop_begin, {.loop_begin = MSCL_LOOP_INFINITE }},
 
 	{mscl_event_volume, {.volume = mscl_sample(0.15) }},
-	{mscl_event_sustain, {.sustain = env_fade_2 }},
+	{mscl_event_sustain, {.sustain = env_fade_fast }},
 	{mscl_event_release, {.release = rel_fade }},
 	{mscl_event_vibrato, {.vibrato = vib_some }},
 	{mscl_event_waveform, {.waveform = wav_pulse_25 }},
@@ -117,7 +117,7 @@ inline static constexpr mscl_event c1[] = {
 	{mscl_event_loop_begin, {.loop_begin = MSCL_LOOP_INFINITE }},
 
 	{mscl_event_volume, {.volume = mscl_sample(0.15) }},
-	{mscl_event_sustain, {.sustain = env_fade_2 }},
+	{mscl_event_sustain, {.sustain = env_fade_fast }},
 	{mscl_event_release, {.release = rel_fade }},
 	{mscl_event_vibrato, {.vibrato = vib_some }},
 	{mscl_event_waveform, {.waveform = wav_pulse_25 }},

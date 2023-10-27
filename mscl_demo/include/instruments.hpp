@@ -104,9 +104,14 @@ inline mscl_sample env_fade(const mscl_time secs)
 	return clampn(mscl_sample(1.0) - mscl_sample(1.25) * mscl_sample(secs));
 }
 
-inline mscl_sample env_fade_2(const mscl_time secs)
+inline mscl_sample env_fade_slow(const mscl_time secs)
 {
-	return clampn(mscl_sample(1.0) - mscl_sample(2.0) * mscl_sample(secs));
+	return clampn(mscl_sample(1.0) - mscl_sample(0.50) * mscl_sample(secs));
+}
+
+inline mscl_sample env_fade_fast(const mscl_time secs)
+{
+	return clampn(mscl_sample(1.0) - mscl_sample(2.00) * mscl_sample(secs));
 }
 
 // ================================================================================================================================

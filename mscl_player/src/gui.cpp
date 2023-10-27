@@ -179,7 +179,7 @@ public:
 				paused = false;
 				playing = true;
 
-				constexpr double offs_pc = 0.0; // 0.625;
+				const double offs_pc = 0.625 * !(playing && loop) * 0;
 				const size_t offs_sp = size_t(double(samples.size()) * offs_pc);
 				const size_t size = samples.size() - offs_sp;
 				const float* const data = samples.data() + offs_sp;
