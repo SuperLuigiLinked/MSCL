@@ -2,6 +2,8 @@
  * @file mscl_player/xaudio2.cpp
  */
 
+#include <memory>
+
 #include <Windows.h>
 #include <xaudio2.h>
 #include <wrl/client.h>
@@ -24,7 +26,7 @@ private:
 public:
 
     PlayerXAudio2()
-        : xaudio2{}, mvoice{}
+        : xaudio2{}, mvoice{}, svoice{}
     {
         const HRESULT res_coinit = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
         ASSERT(SUCCEEDED(res_coinit));
@@ -36,8 +38,6 @@ public:
         const HRESULT res_mv = xaudio2->CreateMasteringVoice(&mvoice, XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE, 0, nullptr, nullptr, AudioCategory_GameEffects);
         ASSERT(SUCCEEDED(res_mv));
         ASSERT(mvoice != nullptr);
-
-        svoice = nullptr;
     }
 
     ~PlayerXAudio2() final
@@ -72,11 +72,7 @@ public:
             .cbSize = 0,
         };
 
-        if (svoice != nullptr)
-        {
-            svoice->DestroyVoice();
-            svoice = nullptr;
-        }
+        this->stop();
         const HRESULT res_sv = xaudio2->CreateSourceVoice(&svoice, &wavefmt, 0, XAUDIO2_MAX_FREQ_RATIO, nullptr, nullptr, nullptr);
         ASSERT(SUCCEEDED(res_sv));
         ASSERT(svoice != nullptr);
@@ -95,7 +91,6 @@ public:
 
         const HRESULT res_submit = svoice->SubmitSourceBuffer(&buffer, nullptr);
         ASSERT(SUCCEEDED(res_submit));
-
     }
 
     void play() final
