@@ -88,13 +88,13 @@ typedef mscl_sample (mscl_envelope)(mscl_time time);
  */
 enum mscl_note
 {
-	MSCL_C =  3, MSCL_Cf = MSCL_C - 1, MSCL_Cs = MSCL_C + 1,
-	MSCL_D =  5, MSCL_Df = MSCL_D - 1, MSCL_Ds = MSCL_D + 1,
-	MSCL_E =  7, MSCL_Ef = MSCL_E - 1, MSCL_Es = MSCL_E + 1,
-	MSCL_F =  8, MSCL_Ff = MSCL_F - 1, MSCL_Fs = MSCL_F + 1,
-	MSCL_G = 10, MSCL_Gf = MSCL_G - 1, MSCL_Gs = MSCL_G + 1,
-	MSCL_A = 12, MSCL_Af = MSCL_A - 1, MSCL_As = MSCL_A + 1,
-	MSCL_B = 14, MSCL_Bf = MSCL_B - 1, MSCL_Bs = MSCL_B + 1,
+	MSCL_C =  3,  MSCL_Cf = MSCL_C - 1,  MSCL_Cs = MSCL_C + 1,
+	MSCL_D =  5,  MSCL_Df = MSCL_D - 1,  MSCL_Ds = MSCL_D + 1,
+	MSCL_E =  7,  MSCL_Ef = MSCL_E - 1,  MSCL_Es = MSCL_E + 1,
+	MSCL_F =  8,  MSCL_Ff = MSCL_F - 1,  MSCL_Fs = MSCL_F + 1,
+	MSCL_G = 10,  MSCL_Gf = MSCL_G - 1,  MSCL_Gs = MSCL_G + 1,
+	MSCL_A = 12,  MSCL_Af = MSCL_A - 1,  MSCL_As = MSCL_A + 1,
+	MSCL_B = 14,  MSCL_Bf = MSCL_B - 1,  MSCL_Bs = MSCL_B + 1,
 };
 typedef enum mscl_note mscl_note;
 
@@ -103,16 +103,16 @@ typedef enum mscl_note mscl_note;
  */
 enum mscl_event_type
 {
-	mscl_event_rest,		///< Continues without playing any notes.
-	mscl_event_tone,		///< Starts a note of the given tone.
-	mscl_event_length,		///< Specifies the length of time to sustain upcoming notes.
-	mscl_event_volume,		///< Specifies the volume of upcoming notes.
-	mscl_event_loop_begin,	///< Indicates the beginning of a loop.
-	mscl_event_loop_end,	///< Indicates the end of a loop.
-	mscl_event_waveform,	///< Envelope describing a Waveform.
-	mscl_event_sustain,		///< Envelope describing Sustain volume, relative the currently set volume. 
-	mscl_event_release,		///< Envelope describing Release volume, relative to the sustain volume at the end of the last played note.
-	mscl_event_vibrato,		///< Envelope describing Vibrato. 
+	mscl_event_rest,       ///< Continues without playing any notes.
+	mscl_event_tone,       ///< Starts a note of the given tone.
+	mscl_event_length,     ///< Specifies the length of time to sustain upcoming notes.
+	mscl_event_volume,     ///< Specifies the volume of upcoming notes.
+	mscl_event_loop_begin, ///< Indicates the beginning of a loop.
+	mscl_event_loop_end,   ///< Indicates the end of a loop.
+	mscl_event_waveform,   ///< Envelope describing a Waveform.
+	mscl_event_sustain,    ///< Envelope describing Sustain volume, relative the currently set volume. 
+	mscl_event_release,    ///< Envelope describing Release volume, relative to the sustain volume at the end of the last played note.
+	mscl_event_vibrato,    ///< Envelope describing Vibrato. 
 };
 typedef enum mscl_event_type mscl_event_type;
 
@@ -121,14 +121,14 @@ typedef enum mscl_event_type mscl_event_type;
  */
 union mscl_event_data
 {
-	mscl_sample tone;			///< A note tone, as returned by `MSCL_TONE`.
-	mscl_time length;			///< A note length.
-	mscl_sample volume;			///< A note volume, preferably in the range [0.0, 1.0].
-	size_t loop_begin;			///< Count of times to repeat the loop. A value of `MSCL_LOOP_INFINITE` causes the loop to repeat indefinitely.
-	mscl_envelope* waveform;	///< Pointer to function that returns Sample values, preferably in the range [-1.0, +1.0].
-	mscl_envelope* sustain;		///< Pointer to function that returns Volume values, preferably in the range [0.0, 1.0].
-	mscl_envelope* release;		///< Pointer to function that returns Volume values, preferably in the range [0.0, 1.0].
-	mscl_envelope* vibrato;		///< Pointer to function that returns the amount of Semitones to adjust the frequency by.
+	mscl_sample tone;        ///< A note tone, as returned by `MSCL_TONE`.
+	mscl_time length;        ///< A note length.
+	mscl_sample volume;      ///< A note volume, preferably in the range [0.0, 1.0].
+	size_t loop_begin;       ///< Count of times to repeat the loop. A value of `MSCL_LOOP_INFINITE` causes the loop to repeat indefinitely.
+	mscl_envelope* waveform; ///< Pointer to function that returns Sample values, preferably in the range [-1.0, +1.0].
+	mscl_envelope* sustain;  ///< Pointer to function that returns Volume values, preferably in the range [0.0, 1.0].
+	mscl_envelope* release;  ///< Pointer to function that returns Volume values, preferably in the range [0.0, 1.0].
+	mscl_envelope* vibrato;  ///< Pointer to function that returns the amount of Semitones to adjust the frequency by.
 };
 typedef union mscl_event_data mscl_event_data;
 
@@ -148,26 +148,26 @@ typedef struct mscl_event mscl_event;
  */
 struct mscl_engine
 {
-	size_t sample_idx;	///< Current sample index.
-	size_t event_idx;	///< Current event index.
+	size_t sample_idx; ///< Current sample index.
+	size_t event_idx;  ///< Current event index.
 
-	size_t loop_event[MSCL_MAX_LOOPS];	///< Event index of loop begin.
-	size_t loop_count[MSCL_MAX_LOOPS];	///< Total number of times to repeat loop.
-	size_t loop_iters[MSCL_MAX_LOOPS];	///< Counter for loop iterations.
-	size_t loop_idx;					///< Indicates loop nest-level.
+	size_t loop_event[MSCL_MAX_LOOPS]; ///< Event index of loop begin.
+	size_t loop_count[MSCL_MAX_LOOPS]; ///< Total number of times to repeat loop.
+	size_t loop_iters[MSCL_MAX_LOOPS]; ///< Counter for loop iterations.
+	size_t loop_idx;                   ///< Indicates loop nest-level.
 	
-	mscl_envelope* waveform;	///< Pointer to currently selected Waveform Envelope. NULL defaults to an output value of 0.0.
-	mscl_envelope* sustain;		///< Pointer to currently selected Sustain Envelope. NULL defaults to an output value of 1.0.
-	mscl_envelope* release;		///< Pointer to currently selected Release Envelope. NULL defaults to an output value of 0.0.
-	mscl_envelope* vibrato;		///< Pointer to currently selected Vibrato Envelope. NULL defaults to an output value of 0.0.
+	mscl_envelope* waveform; ///< Pointer to currently selected Waveform Envelope. NULL defaults to an output value of 0.0.
+	mscl_envelope* sustain;  ///< Pointer to currently selected Sustain Envelope. NULL defaults to an output value of 1.0.
+	mscl_envelope* release;  ///< Pointer to currently selected Release Envelope. NULL defaults to an output value of 0.0.
+	mscl_envelope* vibrato;  ///< Pointer to currently selected Vibrato Envelope. NULL defaults to an output value of 0.0.
 
-	mscl_sample frequency;	///< Current note frequency.
-	mscl_sample volume;		///< Current note volume.
-	mscl_time length;		///< Current note length.
+	mscl_sample frequency; ///< Current note frequency.
+	mscl_sample volume;    ///< Current note volume.
+	mscl_time length;      ///< Current note length.
 	
-	mscl_time next_event;	///< Timepoint of the start of the next event.
-	mscl_time event_s;		///< Timepoint at which Note was started.
-	mscl_time event_r;		///< Timepoint at which Note was released.
+	mscl_time next_event; ///< Timepoint of the start of the next event.
+	mscl_time event_s;    ///< Timepoint at which Note was started.
+	mscl_time event_r;    ///< Timepoint at which Note was released.
 };
 typedef struct mscl_engine mscl_engine;
 
@@ -176,8 +176,8 @@ typedef struct mscl_engine mscl_engine;
  */
 struct mscl_metadata
 {
-	mscl_time intro_len;	///< Length of section before first Infinite Loop or End of Song.
-	mscl_time loop_len;		///< Length of first Infinite Loop, or 0.0 if there is none. 
+	mscl_time intro_len; ///< Length of the section before the first Infinite Loop or End of the Song.
+	mscl_time loop_len;  ///< Length of the first Infinite Loop, or 0.0 if there is none. 
 };
 typedef struct mscl_metadata mscl_metadata;
 
@@ -186,7 +186,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Estimates how long a list of events is, in whole notes.
+ * @brief Estimates how long a list of events is.
  * @param num_events Number of events.
  * @param[in] events Pointer to events.
  * @return The calculated metadata.
@@ -194,9 +194,9 @@ extern "C" {
 extern mscl_metadata mscl_estimate(size_t num_events, const mscl_event* events);
 
 /**
- * @brief Generates an Audio Sample from the a list of MSCL Events.
+ * @brief Generates an audio sample from a list of MSCL Events.
  * @param[in,out] engine The engine responsible for synthesizing audio.
- * @param sps Samples per Second to output at.
+ * @param sps Samples-per-Second to output at.
  * @param speed Speed of the song. 1.0 indicates 60 BPM, 2.0 indicates 120 BPM, and so on.
  * @param num_events Number of events.
  * @param[in] events Pointer to events.
