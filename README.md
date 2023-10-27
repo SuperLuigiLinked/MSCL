@@ -10,3 +10,4 @@ MSCL-Player is C++ Library that allows you to play MSCL Songs and visualize wave
 
 ## MSCL-Demo
 MSCL-Demo is a C++ Application that demonstrates how to use the above two libraries.
+> DISCLAIMER: Not all songs contained in the Demo are covered by the LICENSE/Copyright.
