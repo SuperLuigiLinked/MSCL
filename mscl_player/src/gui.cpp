@@ -289,15 +289,15 @@ void MsclGUI::select_song(const size_t idx)
 		{
 			synths[i].channel = songs[song_idx].channels.begin()[i];
 			synths[i].metadata = mscl_estimate(synths[i].channel.size(), synths[i].channel.data());
-			const mscl_time channel_len = synths[i].metadata.intro_seconds + synths[i].metadata.loop_seconds;
+			const mscl_time channel_len = synths[i].metadata.intro_len + synths[i].metadata.intro_len;
 			if (channel_len > max_len)
 			{
 				max_len = channel_len;
 				main_channel = i;
 			}
 		}
-		speed = songs[song_idx].tempo / mscl_time(60.0);
 		song_len = max_len / speed;
+		speed = songs[song_idx].tempo / mscl_time(60.0);
 	}
 }
 

@@ -128,21 +128,17 @@ inline mscl_sample rel_fade(const mscl_time secs)
 
 // ================================================================================================================================
 
-inline mscl_sample detune(const mscl_sample semitones)
-{
-	return std::pow(mscl_sample(2), semitones / mscl_sample(-288));
-}
-
 inline mscl_sample vibrato(const mscl_time secs, const mscl_time delay, const mscl_time speed, const mscl_sample depth)
 {
-	if (secs < delay) return mscl_sample(1.0);
-	const mscl_sample offs = std::sin(mscl_sample(secs - delay) * mscl_sample(MSCL_TAU) * mscl_sample(speed)) * depth;
-	return detune(offs);
+	if (secs < delay) return mscl_sample(0.0);
+	const mscl_time time = secs - delay;
+	const mscl_sample offs = mscl_sample(time) * mscl_sample(MSCL_TAU) * mscl_sample(speed);
+	return std::sin(offs) * depth / mscl_sample(-24);
 }
 
 inline mscl_sample vib_none(const mscl_time secs [[maybe_unused]])
 {
-	return mscl_sample(1.0);
+	return mscl_sample(0.0);
 }
 
 inline mscl_sample vib_some(const mscl_time secs)
