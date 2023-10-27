@@ -3,12 +3,12 @@
  *
  * @brief MuSiCaL: a Music Synthesis Coding Language
  * 
- *   MSCL (aka MuSiCaL) is a library that allows you to synthesize music using basic commands written in code.
+ * MSCL (aka MuSiCaL) is a library that allows you to synthesize music using basic commands written in code.
  * 
- *   A song is specified as an array of `mscl_event`.
- *   Users start by initializing a `mscl_engine`.
- *   The Engine, Events, and other Data must then be passed to the `mscl_advance` function in order to generate Samples.
- *   Generated Samples may then be modified and passed to an external Audio API for playback. 
+ * A song is specified as an array of `mscl_event`.
+ * Users start by initializing a `mscl_engine`.
+ * The Engine, Events, and other Data must then be passed to the `mscl_advance` function in order to generate Samples.
+ * Generated Samples may then be modified and passed to an external Audio API for playback. 
  */
 
 #pragma once
