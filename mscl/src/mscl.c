@@ -38,21 +38,26 @@ extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* co
 				loop_count[loop_idx] = events[event_idx].data.loop_begin;
 				loop_iters[loop_idx] = 0;
 				if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) metadata.intro_len = song_len;
-				++loop_idx;
 			}
+			++loop_idx;
 		break;
 
 		case mscl_event_loop_end:
 			if (loop_idx > 0)
 			{
 				--loop_idx;
+				if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) goto break_loop;
+
 				++loop_iters[loop_idx];
 				if (loop_iters[loop_idx] <= loop_count[loop_idx])
 				{
-					if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) break;
 					event_idx = loop_event[loop_idx];
 					++loop_idx;
 				}
+			}
+			else // Unbalanced LOOP-END statements are treated as Infinite Loops.
+			{
+				goto break_loop;
 			}
 		break;
 
@@ -64,6 +69,7 @@ extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* co
 		break;
 		}
 	}
+break_loop:
 	metadata.loop_len = song_len - metadata.intro_len;
 	return metadata;
 }
@@ -118,6 +124,10 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
 						engine->event_idx = engine->loop_event[engine->loop_idx];
 						++engine->loop_idx;
 					}
+				}
+				else // Unbalanced LOOP-END statements are treated as Infinite Loops.
+				{
+					engine->event_idx = 0;
 				}
 			break;
 

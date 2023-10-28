@@ -176,8 +176,8 @@ typedef struct mscl_engine mscl_engine;
  */
 struct mscl_metadata
 {
-	mscl_time intro_len; ///< Length of the section before the first Infinite Loop or End of the Song.
-	mscl_time loop_len;  ///< Length of the first Infinite Loop, or 0.0 if there is none. 
+	mscl_time intro_len; ///< Length of the section before the first Infinite Loop, or 0.0 if there is none.
+	mscl_time loop_len;  ///< Length of the section after the Intro.
 };
 typedef struct mscl_metadata mscl_metadata;
 
