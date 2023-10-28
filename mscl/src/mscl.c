@@ -46,13 +46,16 @@ extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* co
 			if (loop_idx > 0)
 			{
 				--loop_idx;
-				if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) goto break_loop;
-
-				++loop_iters[loop_idx];
-				if (loop_iters[loop_idx] <= loop_count[loop_idx])
+				if (loop_idx < MSCL_MAX_LOOPS)
 				{
-					event_idx = loop_event[loop_idx];
-					++loop_idx;
+					if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) goto break_loop;
+
+					++loop_iters[loop_idx];
+					if (loop_iters[loop_idx] <= loop_count[loop_idx])
+					{
+						event_idx = loop_event[loop_idx];
+						++loop_idx;
+					}
 				}
 			}
 			else // Unbalanced LOOP-END statements are treated as Infinite Loops.
@@ -118,11 +121,14 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
 				if (engine->loop_idx > 0)
 				{
 					--engine->loop_idx;
-					++engine->loop_iters[engine->loop_idx];
-					if (engine->loop_iters[engine->loop_idx] <= engine->loop_count[engine->loop_idx])
+					if (engine->loop_idx < MSCL_MAX_LOOPS)
 					{
-						engine->event_idx = engine->loop_event[engine->loop_idx];
-						++engine->loop_idx;
+						++engine->loop_iters[engine->loop_idx];
+						if (engine->loop_iters[engine->loop_idx] <= engine->loop_count[engine->loop_idx])
+						{
+							engine->event_idx = engine->loop_event[engine->loop_idx];
+							++engine->loop_idx;
+						}
 					}
 				}
 				else // Unbalanced LOOP-END statements are treated as Infinite Loops.
