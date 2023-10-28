@@ -5,7 +5,7 @@
 #pragma once
 
 #include "songs/Demo1.hpp"
-#include "songs/Demo2.hpp"
+#include "songs/Demo2b.hpp"
 #include "songs/HappySynth.hpp"
 #include "songs/Menuet.hpp"
 #include "songs/Ghosts.hpp"
