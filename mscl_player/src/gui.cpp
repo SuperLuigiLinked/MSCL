@@ -13,6 +13,7 @@
 #include <vector>
 #include <memory>
 #include <format>
+#include <chrono>
 
 #include <mscl.h>
 #include "mscl_player.hpp"
@@ -54,6 +55,10 @@ private:
 
 	inline static constexpr mscl_fp sps = 48'000.0;
 
+	using Clock = std::chrono::steady_clock;
+	using Tick = Clock::time_point;
+	using Ticks = Clock::duration;
+
 private:
 	
 	std::span<const mscl::Song> songs = {};
@@ -70,6 +75,10 @@ private:
 	bool loop = false;
 	bool paused = false;
 	bool loading = false;
+
+	bool debug = false;
+	Ticks tm_update = {};
+	Ticks tm_render = {};
 
 public:
 
@@ -107,8 +116,14 @@ bool MsclGUI::OnUserCreate()
 
 bool MsclGUI::OnUserUpdate(float fElapsedTime [[maybe_unused]])
 {
+	const Tick t1 = Clock::now();
 	update();
+	const Tick t2 = Clock::now();
 	render();
+	const Tick t3 = Clock::now();
+
+	tm_update = t2 - t1;
+	tm_render = t3 - t2;
 	return true;
 }
 
@@ -175,6 +190,12 @@ void MsclGUI::update()
 		select_song(song_idx + 1);
 		if (loop) loading = true;
 	}
+
+	if (this->GetKey(olc::Key::ESCAPE).bPressed)
+	{
+		debug = !debug;
+	}
+
 	if (!playing) paused = false;
 }
 
@@ -198,16 +219,30 @@ void MsclGUI::render()
 	const std::string track = std::format("<{}:{}>", song_idx + 1, songs.size());
 	const std::string label = std::format(" {}", songs[song_idx].name);
 	const std::string times = std::format("{} / {}", time_format(seconds), time_format(song_seconds));
+	const olc::Pixel timer_color = (loop ? olc::Pixel(0x00, 0xFF, 0x00) : olc::Pixel(0xA0, 0xA0, 0xA0));
+	
 	const int len_ui = int(std::max(track.size() + label.size(), times.size()));
 	const float ui_limit = float(scw) / float(font * len_ui);
-	const int scale_ui = std::clamp(int(ui_limit), 1, 2);
+	const uint32_t scale_ui = uint32_t(std::clamp(int(ui_limit), 1, 2));
+	const int chr_w = font * int(scale_ui);
+	const int chr_h = font * int(scale_ui) + font;
+	const int ui_x = font + chr_w * 0;
+	const int ui_y = font + chr_h * 0;
 
-	const olc::Pixel timer_color = (loop ? olc::Pixel(0x00, 0xFF, 0x00) : olc::Pixel(0xA0, 0xA0, 0xA0));
-
-	this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*0}, track, olc::DARK_GREY, uint32_t(scale_ui));
-	this->DrawString({font+(font*scale_ui)*int(track.size()), font+(font+font*scale_ui)*0}, label, olc::WHITE, uint32_t(scale_ui));
-	this->DrawString({font+(font*scale_ui)*0                , font+(font+font*scale_ui)*1}, times, timer_color, uint32_t(scale_ui));
+	this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*0}, track, olc::DARK_GREY, scale_ui);
+	this->DrawString({ui_x+chr_w*int(track.size()), ui_y+chr_h*0}, label, olc::WHITE, scale_ui);
+	this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*1}, times, timer_color, scale_ui);
 	
+	if (debug)
+	{
+		const uint32_t scale_dbg = uint32_t(std::max(int(scale_ui) / 2, 1));
+		const int dbg_x = font + chr_w * 0;
+		const int dbg_y = font + chr_h * 3;
+		this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*0}, "DEBUG MENU", olc::GREY, scale_ui);
+		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*1}, std::format("* Time Update: {:>10} ns", std::chrono::nanoseconds(tm_update).count()), olc::GREY, scale_dbg);
+		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*2}, std::format("* Time Render: {:>10} ns", std::chrono::nanoseconds(tm_render).count()), olc::GREY, scale_dbg);
+	}
+
 	if (playing && !loading)
 	{
 		for (int x = 0; x <= scw; ++x)
