@@ -221,8 +221,8 @@ void MsclGUI::render()
 			const float poffs = (pi < num_samples) ? samples[pi] : 0.0; 
 			const float noffs = (ni < num_samples) ? samples[ni] : 0.0; 
 
-			const int py = static_cast<int>(half + half * poffs);
-			const int ny = static_cast<int>(half + half * noffs);
+			const int py = static_cast<int>(half - half * poffs);
+			const int ny = static_cast<int>(half - half * noffs);
 			this->DrawLine({x-1, py}, {x, ny}, olc::Pixel(0xFF, 0xFF, 0xFF));
 		}
 	}
