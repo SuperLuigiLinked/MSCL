@@ -79,6 +79,8 @@ private:
 	bool debug = false;
 	Ticks tm_update = {};
 	Ticks tm_render = {};
+	Ticks tm_select = {};
+	Ticks tm_load = {};
 
 public:
 
@@ -241,6 +243,8 @@ void MsclGUI::render()
 		this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*0}, "DEBUG MENU", olc::GREY, scale_ui);
 		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*1}, std::format("* Time Update: {:>10} ns", std::chrono::nanoseconds(tm_update).count()), olc::GREY, scale_dbg);
 		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*2}, std::format("* Time Render: {:>10} ns", std::chrono::nanoseconds(tm_render).count()), olc::GREY, scale_dbg);
+		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*3}, std::format("* Time Select: {:>10} ns", std::chrono::nanoseconds(tm_select).count()), olc::GREY, scale_dbg);
+		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*4}, std::format("* Time Load  : {:>10} ns", std::chrono::nanoseconds(tm_load  ).count()), olc::GREY, scale_dbg);
 	}
 
 	if (playing && !loading)
@@ -308,54 +312,64 @@ void MsclGUI::init_engines()
 
 void MsclGUI::select_song(const size_t idx)
 {
-	const size_t sel_idx = size_t(imodf(intptr_t(idx), intptr_t(songs.size())));
-
-	if (song_idx != sel_idx)
+	const Tick t1 = Clock::now();
 	{
-		player->stop();
-		song_idx = sel_idx;
+		const size_t sel_idx = size_t(imodf(intptr_t(idx), intptr_t(songs.size())));
 
-		const size_t num_channels = songs[song_idx].channels.size();
-		synths.resize(num_channels);
-
-		mscl_fp max_beats = 0.0;
-		for (size_t i = 0; i < num_channels; ++i)
+		if (song_idx != sel_idx)
 		{
-			synths[i].channel = songs[song_idx].channels.begin()[i];
-			synths[i].metadata = mscl_estimate(synths[i].channel.size(), synths[i].channel.data());
-			const mscl_fp channel_beats = synths[i].metadata.intro_beats + synths[i].metadata.loop_beats;
-			if (channel_beats > max_beats)
+			player->stop();
+			song_idx = sel_idx;
+
+			const size_t num_channels = songs[song_idx].channels.size();
+			synths.resize(num_channels);
+
+			mscl_fp max_beats = 0.0;
+			for (size_t i = 0; i < num_channels; ++i)
 			{
-				max_beats = channel_beats;
-				main_channel = i;
+				synths[i].channel = songs[song_idx].channels.begin()[i];
+				synths[i].metadata = mscl_estimate(synths[i].channel.size(), synths[i].channel.data());
+				const mscl_fp channel_beats = synths[i].metadata.intro_beats + synths[i].metadata.loop_beats;
+				if (channel_beats > max_beats)
+				{
+					max_beats = channel_beats;
+					main_channel = i;
+				}
 			}
+			const mscl_fp song_speed = songs[song_idx].bpm / mscl_fp(60);
+			song_seconds = (song_speed > 0) ? (max_beats / song_speed) : 0.0;
 		}
-		const mscl_fp song_speed = songs[song_idx].bpm / mscl_fp(60);
-		song_seconds = (song_speed > 0) ? (max_beats / song_speed) : 0.0;
 	}
+	const Tick t2 = Clock::now();
+	tm_select = t2 - t1;
 }
 
 void MsclGUI::load_song()
 {
-	if (loaded_idx != song_idx)
+	const Tick t1 = Clock::now();
 	{
-		player->stop();
-		loaded_idx = song_idx;
-
-		init_engines();
-		samples.resize(size_t(song_seconds * sps));
-
-		for (float& sample : samples)
+		if (loaded_idx != song_idx)
 		{
-			mscl_fp data = 0.0;
-			for (Synth& synth : synths)
+			player->stop();
+			loaded_idx = song_idx;
+
+			init_engines();
+			samples.resize(size_t(song_seconds * sps));
+
+			for (float& sample : samples)
 			{
-				synth.sample = mscl_advance(&synth.engine, sps, songs[song_idx].bpm, synth.channel.size(), synth.channel.data());
-				data += synth.sample;
+				mscl_fp data = 0.0;
+				for (Synth& synth : synths)
+				{
+					synth.sample = mscl_advance(&synth.engine, sps, songs[song_idx].bpm, synth.channel.size(), synth.channel.data());
+					data += synth.sample;
+				}
+				sample = float(data);
 			}
-			sample = float(data);
 		}
 	}
+	const Tick t2 = Clock::now();
+	tm_load = t2 - t1;
 }
 
 // ================================================================================================================================
