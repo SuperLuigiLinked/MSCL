@@ -25,25 +25,19 @@
 #endif
 
 /**
- * @brief Data type used for calculating Samples.
+ * @brief Data type used for calculating samples.
  */
-typedef float mscl_sample;
-
-/**
- * @brief Data type used for representing intervals of Time.
- * @note The actual unit of time depends on the context.
- */
-typedef float mscl_time;
+typedef float mscl_fp;
 
 /**
  * @brief Function that samples a waveform at a given time and frequency.
  */
-typedef mscl_sample (mscl_waveform)(mscl_time seconds, mscl_sample frequency);
+typedef mscl_fp (mscl_waveform)(mscl_fp seconds, mscl_fp frequency);
 
 /**
  * @brief Function that returns a modifier at a given time.
  */
-typedef mscl_sample (mscl_envelope)(mscl_time seconds);
+typedef mscl_fp (mscl_envelope)(mscl_fp seconds);
 
 /**
  * @brief Convenience PI constant.
@@ -79,13 +73,13 @@ typedef mscl_sample (mscl_envelope)(mscl_time seconds);
  * @brief Calculates the Tone representing an (Octave, Note) pair.
  * @note A value of `MSCL_TONE(4, MSCL_C)` represents Middle C.
  */
-#define MSCL_TONE(octave, note) ((mscl_sample)(octave) + ((mscl_sample)(note) / (mscl_sample)(12)))
+#define MSCL_TONE(octave, note) ((mscl_fp)(octave) + ((mscl_fp)(note) / (mscl_fp)(12)))
 
 /**
  * @brief Calculates the Frequency for a given Tone.
  * @note This function is tuned such that an input of `MSCL_TONE(4, MSCL_A)` returns 440 Hz.
  */
-#define MSCL_FREQ(tone) ((mscl_sample)(13.75) * (mscl_sample)(MSCL_POW((mscl_sample)(2), (mscl_sample)(tone))))
+#define MSCL_FREQ(tone) ((mscl_fp)(13.75) * (mscl_fp)(MSCL_POW((mscl_fp)(2), (mscl_fp)(tone))))
 
 /**
  * @brief Constants for different Notes in an Octave.
@@ -126,9 +120,9 @@ typedef enum mscl_event_type mscl_event_type;
  */
 union mscl_event_data
 {
-	mscl_sample tone;        ///< A note tone, as returned by `MSCL_TONE`.
-	mscl_time length;        ///< A note length, in Beats.
-	mscl_sample volume;      ///< A note volume, preferably in the range [0.0, 1.0].
+	mscl_fp tone;            ///< A note tone, as returned by `MSCL_TONE`.
+	mscl_fp length;          ///< A note length, in Beats.
+	mscl_fp volume;          ///< A note volume, preferably in the range [0.0, 1.0].
 	size_t loop_begin;       ///< Count of times to repeat the loop. A value of `MSCL_LOOP_INFINITE` causes the loop to repeat indefinitely.
 	mscl_waveform* waveform; ///< Pointer to function that returns Sample values, preferably in the range [-1.0, +1.0].
 	mscl_envelope* sustain;  ///< Pointer to function that returns Volume values, preferably in the range [0.0, 1.0].
@@ -165,13 +159,13 @@ struct mscl_engine
 	mscl_envelope* release;  ///< Pointer to currently selected Release Envelope. NULL defaults to an output value of 0.0.
 	mscl_envelope* vibrato;  ///< Pointer to currently selected Vibrato Envelope. NULL defaults to an output value of 0.0.
 
-	mscl_sample frequency; ///< Current note frequency.
-	mscl_sample volume;    ///< Current note volume.
-	mscl_time length;      ///< Current note length.
+	mscl_fp frequency; ///< Current note frequency.
+	mscl_fp volume;    ///< Current note volume.
+	mscl_fp length;    ///< Current note length.
 	
-	mscl_time next_event; ///< Timepoint (Beat) of the start of the next event.
-	mscl_time event_s;    ///< Timepoint (Beat) at which Note was started.
-	mscl_time event_r;    ///< Timepoint (Beat) at which Note was released.
+	mscl_fp next_event; ///< Timepoint (Beat) of the start of the next event.
+	mscl_fp event_s;    ///< Timepoint (Beat) at which Note was started.
+	mscl_fp event_r;    ///< Timepoint (Beat) at which Note was released.
 };
 typedef struct mscl_engine mscl_engine;
 
@@ -180,8 +174,8 @@ typedef struct mscl_engine mscl_engine;
  */
 struct mscl_metadata
 {
-	mscl_time intro_beats; ///< Length of the section before the first Infinite Loop, or 0.0 if there are none.
-	mscl_time loop_beats;  ///< Length of the section after the Intro.
+	mscl_fp intro_beats; ///< Length of the section before the first Infinite Loop, or 0.0 if there are none.
+	mscl_fp loop_beats;  ///< Length of the section after the Intro.
 };
 typedef struct mscl_metadata mscl_metadata;
 
@@ -201,13 +195,13 @@ extern mscl_metadata mscl_estimate(size_t num_events, const mscl_event* events);
  * @brief Generates an audio sample from a list of MSCL Events.
  * @param[in,out] engine The engine responsible for synthesizing audio.
  * @param sps Samples-per-Second to output at.
- * @param speed Speed of the song. 1.0 indicates 60 BPM, 2.0 indicates 120 BPM, and so on.
+ * @param bpm Beats-per-Minute of the song.
  * @param num_events Number of events.
  * @param[in] events Pointer to events.
  * @return The generated Sample.
  * @warning If any of the parameters are changed between calls without re-initializing the engine, the results may be unexpected.
  */
-extern mscl_sample mscl_advance(mscl_engine* engine, mscl_time sps, mscl_time speed, size_t num_events, const mscl_event* events);
+extern mscl_fp mscl_advance(mscl_engine* engine, mscl_fp sps, mscl_fp bpm, size_t num_events, const mscl_event* events);
 
 #ifdef __cplusplus
 }

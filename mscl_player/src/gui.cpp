@@ -16,15 +16,16 @@
 
 #include <mscl.h>
 #include "mscl_player.hpp"
+#include "mscl_gui.hpp"
 #include "utils.hpp"
 
 // ================================================================================================================================
 
-inline static std::string time_format(const mscl_time seconds)
+inline static std::string time_format(const mscl_fp seconds)
 {
-	const mscl_time tm = std::floor(seconds / mscl_time(60));
-	const mscl_time ts = std::floor(seconds) - mscl_time(60) * tm;
-	const mscl_time tf = std::floor((seconds - std::floor(seconds)) * mscl_time(1'000));
+	const mscl_fp tm = std::floor(seconds / mscl_fp(60));
+	const mscl_fp ts = std::floor(seconds) - mscl_fp(60) * tm;
+	const mscl_fp tf = std::floor((seconds - std::floor(seconds)) * mscl_fp(1'000));
 
 	if (tm > 0)
 		return std::format("{}:{:02}.{:03}", tm, ts, tf);
@@ -48,10 +49,10 @@ private:
 		mscl::Channel channel;
 		mscl_metadata metadata;
 		mscl_engine engine;
-		mscl_sample sample;
+		mscl_fp sample;
 	};
 
-	inline static constexpr mscl_time sps = 48'000.0;
+	inline static constexpr mscl_fp sps = 48'000.0;
 
 private:
 	
@@ -60,8 +61,7 @@ private:
 	size_t loaded_idx = size_t(-1);
 	
 	size_t main_channel = {};
-	mscl_time song_speed = {};
-	mscl_time song_seconds = {};
+	mscl_fp song_seconds = {};
 
 	std::unique_ptr<mscl::Player> player = {};
 	std::vector<float> samples = {};
@@ -193,7 +193,7 @@ void MsclGUI::render()
 	const size_t num_samples = samples.size();
 	const size_t sample_pos = player->pos();
 	const bool playing = player->playing();
-	const mscl_time seconds = mscl_time(sample_pos) / sps;
+	const mscl_fp seconds = mscl_fp(sample_pos) / sps;
 	
 	const std::string track = std::format("<{}:{}>", song_idx + 1, songs.size());
 	const std::string label = std::format(" {}", songs[song_idx].name);
@@ -283,20 +283,20 @@ void MsclGUI::select_song(const size_t idx)
 		const size_t num_channels = songs[song_idx].channels.size();
 		synths.resize(num_channels);
 
-		mscl_time max_beats = 0.0;
+		mscl_fp max_beats = 0.0;
 		for (size_t i = 0; i < num_channels; ++i)
 		{
 			synths[i].channel = songs[song_idx].channels.begin()[i];
 			synths[i].metadata = mscl_estimate(synths[i].channel.size(), synths[i].channel.data());
-			const mscl_time channel_beats = synths[i].metadata.intro_beats + synths[i].metadata.loop_beats;
+			const mscl_fp channel_beats = synths[i].metadata.intro_beats + synths[i].metadata.loop_beats;
 			if (channel_beats > max_beats)
 			{
 				max_beats = channel_beats;
 				main_channel = i;
 			}
 		}
-		song_speed = songs[song_idx].tempo / mscl_time(60.0);
-		song_seconds = (song_speed > 0) ? max_beats / song_speed : 0.0;
+		const mscl_fp song_speed = songs[song_idx].bpm / mscl_fp(60);
+		song_seconds = (song_speed > 0) ? (max_beats / song_speed) : 0.0;
 	}
 }
 
@@ -312,10 +312,10 @@ void MsclGUI::load_song()
 
 		for (float& sample : samples)
 		{
-			mscl_sample data = 0.0;
+			mscl_fp data = 0.0;
 			for (Synth& synth : synths)
 			{
-				synth.sample = mscl_advance(&synth.engine, sps, song_speed, synth.channel.size(), synth.channel.data());
+				synth.sample = mscl_advance(&synth.engine, sps, songs[song_idx].bpm, synth.channel.size(), synth.channel.data());
 				data += synth.sample;
 			}
 			sample = float(data);

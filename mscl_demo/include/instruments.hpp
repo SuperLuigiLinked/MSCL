@@ -59,111 +59,126 @@ template <typename T> inline static T harmonic(const T pc, const T h) noexcept
 	return std::sin(T(MSCL_TAU) * normf(pc) * h) / h;
 }
 
+template <typename T> inline static T sinus(const T pc, const T duty) noexcept
+{
+	const T npc = normf(pc);
+	return (npc < duty) ? std::sin(T(MSCL_PI) * (npc / duty)) : std::sin(T(MSCL_PI) * ((npc - duty) / (duty - 1.0)));
+}
+
 // ================================================================================================================================
 
-inline mscl_sample wav_sine(const mscl_time s, const mscl_sample f)
+inline mscl_fp wav_sine(const mscl_fp s, const mscl_fp f)
 {
-	return nsine(mscl_sample(s) * f);
+	return nsine(s * f);
 }
 
-inline mscl_sample wav_square(const mscl_time s, const mscl_sample f)
+inline mscl_fp wav_square(const mscl_fp s, const mscl_fp f)
 {
-	//return (normf(mscl_sample(pc)) < mscl_time(0.5) ? mscl_sample(0.5) : mscl_sample(-0.5));
-	return clampf(mscl_sample(25.0) * nsine(mscl_sample(s) * f), mscl_sample(-0.5), mscl_sample(0.5));
+	//return (normf(mscl_fp(pc)) < mscl_fp(0.5) ? mscl_fp(0.5) : mscl_fp(-0.5));
+	return clampf(mscl_fp(25.0) * nsine(s * f), mscl_fp(-0.5), mscl_fp(0.5));
 }
 
-inline mscl_sample wav_pulse_25(const mscl_time s, const mscl_sample f)
+inline mscl_fp wav_pulse_25(const mscl_fp s, const mscl_fp f)
 {
-	return mscl_sample(0.5) * pulse(mscl_sample(s) * f, mscl_sample(0.25));
+	return mscl_fp(0.5) * pulse(s * f, mscl_fp(0.25));
 }
 
-inline mscl_sample wav_pulse_125(const mscl_time s, const mscl_sample f)
+inline mscl_fp wav_pulse_125(const mscl_fp s, const mscl_fp f)
 {
-	return mscl_sample(0.5) * pulse(mscl_sample(s) * f, mscl_sample(0.125));
+	return mscl_fp(0.5) * pulse(s * f, mscl_fp(0.125));
 }
 
-inline mscl_sample wav_saw(const mscl_time s, const mscl_sample f)
+inline mscl_fp wav_saw(const mscl_fp s, const mscl_fp f)
 {
-	return normf(mscl_sample(s) * f) - mscl_sample(0.5);
+	return normf(s * f) - mscl_fp(0.5);
 }
 
-inline mscl_sample wav_tri(const mscl_time s, const mscl_sample f)
+inline mscl_fp wav_tri(const mscl_fp s, const mscl_fp f)
 {
-	return std::fabs(normf(mscl_sample(s) * f) - mscl_sample(0.5)) * mscl_sample(2.0) - mscl_sample(0.5);
+	return std::fabs(normf(s * f) - mscl_fp(0.5)) * mscl_fp(2.0) - mscl_fp(0.5);
 }
 
-inline mscl_sample wav_fin(const mscl_time s, const mscl_sample f)
+inline mscl_fp wav_fin(const mscl_fp s, const mscl_fp f)
 {
-	constexpr mscl_sample exp = mscl_sample(1.0 / 2.0);
-	const mscl_sample xs = fmodf(mscl_sample(s) * f, mscl_sample(0.5));
-	const mscl_sample xn = normf(mscl_sample(s) * f);
-	const mscl_sample sine = std::pow(std::sin(mscl_sample(MSCL_PI) * xs), exp) - mscl_sample(0.5);
-	const mscl_sample sign = (xn < mscl_sample(0.5) ? mscl_sample(1.0) : mscl_sample(-1.0));
+	constexpr mscl_fp exp = mscl_fp(1.0 / 2.0);
+	const mscl_fp xs = fmodf(s * f, mscl_fp(0.5));
+	const mscl_fp xn = normf(s * f);
+	const mscl_fp sine = std::pow(std::sin(mscl_fp(MSCL_PI) * xs), exp) - mscl_fp(0.5);
+	const mscl_fp sign = (xn < mscl_fp(0.5) ? mscl_fp(1.0) : mscl_fp(-1.0));
 	return sine * sign;
 }
 
-inline mscl_sample wav_noise(const mscl_time s [[maybe_unused]], const mscl_sample f [[maybe_unused]])
+inline mscl_fp wav_noise(const mscl_fp s [[maybe_unused]], const mscl_fp f [[maybe_unused]])
 {
-	return mscl_sample(rand()) / mscl_sample(RAND_MAX) - mscl_sample(0.5);
+	return mscl_fp(rand()) / mscl_fp(RAND_MAX) - mscl_fp(0.5);
+}
+
+inline mscl_fp wav_fm(const mscl_fp s, const mscl_fp f)
+{
+	const mscl_fp pc = s * f;
+	return harmonic(pc, mscl_fp(1))
+		+ harmonic(pc, mscl_fp(2))
+		+ harmonic(pc, mscl_fp(3))
+	;
 }
 
 // ================================================================================================================================
 
-inline mscl_sample env_hold(const mscl_time s [[maybe_unused]])
+inline mscl_fp env_hold(const mscl_fp s [[maybe_unused]])
 {
-	return mscl_sample(1.0);
+	return mscl_fp(1.0);
 }
 
-inline mscl_sample env_fade(const mscl_time s)
+inline mscl_fp env_fade(const mscl_fp s)
 {
-	return clampn(mscl_sample(1.0) - mscl_sample(1.25) * mscl_sample(s));
+	return clampn(mscl_fp(1.0) - mscl_fp(1.25) * s);
 }
 
-inline mscl_sample env_fade_slow(const mscl_time s)
+inline mscl_fp env_fade_slow(const mscl_fp s)
 {
-	return clampn(mscl_sample(1.0) - mscl_sample(0.50) * mscl_sample(s));
+	return clampn(mscl_fp(1.0) - mscl_fp(0.50) * s);
 }
 
-inline mscl_sample env_fade_fast(const mscl_time s)
+inline mscl_fp env_fade_fast(const mscl_fp s)
 {
-	return clampn(mscl_sample(1.0) - mscl_sample(2.00) * mscl_sample(s));
-}
-
-// ================================================================================================================================
-
-inline mscl_sample rel_drop(const mscl_time s [[maybe_unused]])
-{
-	return mscl_sample(0.0);
-}
-
-inline mscl_sample rel_fade(const mscl_time s)
-{
-	return clampn(mscl_sample(1.0) - mscl_sample(2.0) * mscl_sample(s));
+	return clampn(mscl_fp(1.0) - mscl_fp(2.00) * s);
 }
 
 // ================================================================================================================================
 
-inline mscl_sample vibrato(const mscl_time s, const mscl_time delay, const mscl_time speed, const mscl_sample depth)
+inline mscl_fp rel_drop(const mscl_fp s [[maybe_unused]])
 {
-	if (s < delay) return mscl_sample(0.0);
-	const mscl_time time = s - delay;
-	const mscl_sample offs = mscl_sample(time) * mscl_sample(MSCL_TAU) * mscl_sample(speed);
-	return std::sin(offs) * depth / mscl_sample(-24);
+	return mscl_fp(0.0);
 }
 
-inline mscl_sample vib_none(const mscl_time s [[maybe_unused]])
+inline mscl_fp rel_fade(const mscl_fp s)
 {
-	return mscl_sample(0.0);
+	return clampn(mscl_fp(1.0) - mscl_fp(2.0) * s);
 }
 
-inline mscl_sample vib_some(const mscl_time s)
+// ================================================================================================================================
+
+inline mscl_fp vibrato(const mscl_fp s, const mscl_fp delay, const mscl_fp speed, const mscl_fp depth)
 {
-	return vibrato(s, mscl_time(0.5), mscl_time(4.0), mscl_sample(1.0));
+	if (s < delay) return mscl_fp(0.0);
+	const mscl_fp time = s - delay;
+	const mscl_fp offs = mscl_fp(time) * mscl_fp(MSCL_TAU) * mscl_fp(speed);
+	return std::sin(offs) * depth / mscl_fp(-24);
 }
 
-inline mscl_sample vib_medium(const mscl_time s)
+inline mscl_fp vib_none(const mscl_fp s [[maybe_unused]])
 {
-	return vibrato(s, mscl_time(0.125), mscl_time(6.0), mscl_sample(1.0));
+	return mscl_fp(0.0);
+}
+
+inline mscl_fp vib_some(const mscl_fp s)
+{
+	return vibrato(s, mscl_fp(0.5), mscl_fp(4.0), mscl_fp(1.0));
+}
+
+inline mscl_fp vib_medium(const mscl_fp s)
+{
+	return vibrato(s, mscl_fp(0.125), mscl_fp(6.0), mscl_fp(1.0));
 }
 
 // ================================================================================================================================

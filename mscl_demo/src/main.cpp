@@ -4,7 +4,7 @@
  * @brief Demo Program for MSCL library.
  */
 
-#include <mscl_player.hpp>
+#include <mscl_gui.hpp>
 #include "songs.hpp"
 
 #ifdef _WIN32

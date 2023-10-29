@@ -27,6 +27,7 @@ target_sources(mscl_player
         "src/gui.cpp"
         "src/xaudio2.cpp"
         "include/mscl_player.hpp"
+        "include/mscl_gui.hpp"
 )
 target_link_libraries(mscl_player mscl::mscl olc::PGE)
 

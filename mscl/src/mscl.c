@@ -8,8 +8,8 @@
 
 extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* const events)
 {
-	mscl_time song_beats = 0.0;
-	mscl_time length = 0.0;
+	mscl_fp song_beats = 0.0;
+	mscl_fp length = 0.0;
 
 	size_t loop_event[MSCL_MAX_LOOPS] = {0};
 	size_t loop_count[MSCL_MAX_LOOPS] = {0};
@@ -75,12 +75,13 @@ break_loop:
 	return metadata;
 }
 
-extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, const mscl_time speed, const size_t num_events, const mscl_event* const events)
+extern mscl_fp mscl_advance(mscl_engine* const engine, const mscl_fp sps, const mscl_fp bpm, const size_t num_events, const mscl_event* const events)
 {
 	if (!engine) return 0;
 
-	const mscl_time seconds = (mscl_time)engine->sample_idx / sps;
-	const mscl_time beats = seconds * speed;
+	const mscl_fp speed = bpm / (mscl_fp)60;
+	const mscl_fp seconds = (mscl_fp)engine->sample_idx / sps;
+	const mscl_fp beats = seconds * speed;
 
 	while ((engine->event_idx < num_events) && (beats >= engine->next_event))
 	{
@@ -154,27 +155,27 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
 		++engine->event_idx;
 	}
 
-	const mscl_time sustain_beats = beats - engine->event_s;
-	const mscl_time release_beats = beats - engine->event_r;
-	const mscl_time tone_beats = engine->event_r - engine->event_s;
+	const mscl_fp sustain_beats = beats - engine->event_s;
+	const mscl_fp release_beats = beats - engine->event_r;
+	const mscl_fp tone_beats = engine->event_r - engine->event_s;
 
-	const mscl_time sustain_seconds = sustain_beats / speed;
-	const mscl_time release_seconds = release_beats / speed;
-	const mscl_time tone_seconds = tone_beats / speed;
+	const mscl_fp sustain_seconds = sustain_beats / speed;
+	const mscl_fp release_seconds = release_beats / speed;
+	const mscl_fp tone_seconds = tone_beats / speed;
 
-	const mscl_sample d_sample = engine->vibrato
-		? MSCL_POW((mscl_sample)2, engine->vibrato(sustain_seconds) / (mscl_sample)12)
-		: (mscl_sample)1.0;
+	const mscl_fp d_sample = engine->vibrato
+		? MSCL_POW((mscl_fp)2, engine->vibrato(sustain_seconds) / (mscl_fp)12)
+		: (mscl_fp)1.0;
 	
-	const mscl_sample w_sample = engine->waveform
+	const mscl_fp w_sample = engine->waveform
 		? engine->waveform(sustain_seconds, engine->frequency * d_sample)
-		: (mscl_sample)0.0;
+		: (mscl_fp)0.0;
 
-	const mscl_sample e_sample = (release_seconds < 0)
-		? (engine->sustain ? engine->sustain(sustain_seconds) : (mscl_sample)1.0)
-		: (engine->release ? engine->sustain(tone_seconds) * engine->release(release_seconds) : (mscl_sample)0.0);
+	const mscl_fp e_sample = (release_seconds < 0)
+		? (engine->sustain ? engine->sustain(sustain_seconds) : (mscl_fp)1.0)
+		: (engine->release ? engine->sustain(tone_seconds) * engine->release(release_seconds) : (mscl_fp)0.0);
 
-	const mscl_sample sample = w_sample * e_sample * engine->volume; 
+	const mscl_fp sample = w_sample * e_sample * engine->volume; 
 
 	++engine->sample_idx;
 	return sample;

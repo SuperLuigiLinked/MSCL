@@ -46,7 +46,7 @@ public:
         if (mvoice) mvoice->DestroyVoice();
     }
 
-    void submit(const size_t num_samples, const float* const samples, const mscl_time sps) final
+    void submit(const size_t num_samples, const float* const samples, const mscl_fp sps) final
     {
         if (num_samples == 0) return;
         ASSERT(samples != nullptr);
