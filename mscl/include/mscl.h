@@ -31,14 +31,19 @@ typedef float mscl_sample;
 
 /**
  * @brief Data type used for representing intervals of Time.
- * @note A value of 1.0 represents the length of a Whole Note, 0.5 a Half Note, so on and so forth.
+ * @note The actual unit of time depends on the context.
  */
 typedef float mscl_time;
 
 /**
- * @brief A function that returns a Sample at a given Time.
+ * @brief Function that samples a waveform at a given time and frequency.
  */
-typedef mscl_sample (mscl_envelope)(mscl_time time);
+typedef mscl_sample (mscl_waveform)(mscl_time seconds, mscl_sample frequency);
+
+/**
+ * @brief Function that returns a modifier at a given time.
+ */
+typedef mscl_sample (mscl_envelope)(mscl_time seconds);
 
 /**
  * @brief Convenience PI constant.
@@ -122,10 +127,10 @@ typedef enum mscl_event_type mscl_event_type;
 union mscl_event_data
 {
 	mscl_sample tone;        ///< A note tone, as returned by `MSCL_TONE`.
-	mscl_time length;        ///< A note length.
+	mscl_time length;        ///< A note length, in Beats.
 	mscl_sample volume;      ///< A note volume, preferably in the range [0.0, 1.0].
 	size_t loop_begin;       ///< Count of times to repeat the loop. A value of `MSCL_LOOP_INFINITE` causes the loop to repeat indefinitely.
-	mscl_envelope* waveform; ///< Pointer to function that returns Sample values, preferably in the range [-1.0, +1.0].
+	mscl_waveform* waveform; ///< Pointer to function that returns Sample values, preferably in the range [-1.0, +1.0].
 	mscl_envelope* sustain;  ///< Pointer to function that returns Volume values, preferably in the range [0.0, 1.0].
 	mscl_envelope* release;  ///< Pointer to function that returns Volume values, preferably in the range [0.0, 1.0].
 	mscl_envelope* vibrato;  ///< Pointer to function that returns the amount of Semitones to adjust the frequency by.
@@ -156,7 +161,7 @@ struct mscl_engine
 	size_t loop_iters[MSCL_MAX_LOOPS]; ///< Counter for loop iterations.
 	size_t loop_idx;                   ///< Indicates loop nest-level.
 	
-	mscl_envelope* waveform; ///< Pointer to currently selected Waveform Envelope. NULL defaults to an output value of 0.0.
+	mscl_waveform* waveform; ///< Pointer to currently selected Waveform Envelope. NULL defaults to an output value of 0.0.
 	mscl_envelope* sustain;  ///< Pointer to currently selected Sustain Envelope. NULL defaults to an output value of 1.0.
 	mscl_envelope* release;  ///< Pointer to currently selected Release Envelope. NULL defaults to an output value of 0.0.
 	mscl_envelope* vibrato;  ///< Pointer to currently selected Vibrato Envelope. NULL defaults to an output value of 0.0.
@@ -165,9 +170,9 @@ struct mscl_engine
 	mscl_sample volume;    ///< Current note volume.
 	mscl_time length;      ///< Current note length.
 	
-	mscl_time next_event; ///< Timepoint of the start of the next event.
-	mscl_time event_s;    ///< Timepoint at which Note was started.
-	mscl_time event_r;    ///< Timepoint at which Note was released.
+	mscl_time next_event; ///< Timepoint (Beat) of the start of the next event.
+	mscl_time event_s;    ///< Timepoint (Beat) at which Note was started.
+	mscl_time event_r;    ///< Timepoint (Beat) at which Note was released.
 };
 typedef struct mscl_engine mscl_engine;
 
@@ -176,8 +181,8 @@ typedef struct mscl_engine mscl_engine;
  */
 struct mscl_metadata
 {
-	mscl_time intro_len; ///< Length of the section before the first Infinite Loop, or 0.0 if there is none.
-	mscl_time loop_len;  ///< Length of the section after the Intro.
+	mscl_time intro_beats; ///< Length of the section before the first Infinite Loop, or 0.0 if there is none.
+	mscl_time loop_beats;  ///< Length of the section after the Intro.
 };
 typedef struct mscl_metadata mscl_metadata;
 

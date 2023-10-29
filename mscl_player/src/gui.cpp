@@ -60,8 +60,8 @@ private:
 	size_t loaded_idx = size_t(-1);
 	
 	size_t main_channel = {};
-	mscl_time speed = {};
-	mscl_time song_len = {};
+	mscl_time song_speed = {};
+	mscl_time song_seconds = {};
 
 	std::unique_ptr<mscl::Player> player = {};
 	std::vector<float> samples = {};
@@ -197,7 +197,7 @@ void MsclGUI::render()
 	
 	const std::string track = std::format("<{}:{}>", song_idx + 1, songs.size());
 	const std::string label = std::format(" {}", songs[song_idx].name);
-	const std::string times = std::format("{} / {}", time_format(seconds), time_format(song_len));
+	const std::string times = std::format("{} / {}", time_format(seconds), time_format(song_seconds));
 	const int len_ui = int(std::max(track.size() + label.size(), times.size()));
 	const float ui_limit = float(scw) / float(font * len_ui);
 	const int scale_ui = std::clamp(int(ui_limit), 1, 2);
@@ -281,23 +281,22 @@ void MsclGUI::select_song(const size_t idx)
 		song_idx = sel_idx;
 
 		const size_t num_channels = songs[song_idx].channels.size();
-		synths.clear();
 		synths.resize(num_channels);
 
-		mscl_time max_len = 0.0;
+		mscl_time max_beats = 0.0;
 		for (size_t i = 0; i < num_channels; ++i)
 		{
 			synths[i].channel = songs[song_idx].channels.begin()[i];
 			synths[i].metadata = mscl_estimate(synths[i].channel.size(), synths[i].channel.data());
-			const mscl_time channel_len = synths[i].metadata.intro_len + synths[i].metadata.loop_len;
-			if (channel_len > max_len)
+			const mscl_time channel_beats = synths[i].metadata.intro_beats + synths[i].metadata.loop_beats;
+			if (channel_beats > max_beats)
 			{
-				max_len = channel_len;
+				max_beats = channel_beats;
 				main_channel = i;
 			}
 		}
-		speed = songs[song_idx].tempo / mscl_time(60.0);
-		song_len = (speed > 0) ? max_len / speed : 0.0;
+		song_speed = songs[song_idx].tempo / mscl_time(60.0);
+		song_seconds = (song_speed > 0) ? max_beats / song_speed : 0.0;
 	}
 }
 
@@ -309,15 +308,14 @@ void MsclGUI::load_song()
 		loaded_idx = song_idx;
 
 		init_engines();
-		samples.clear();
-		samples.resize(size_t(song_len * sps));
+		samples.resize(size_t(song_seconds * sps));
 
 		for (float& sample : samples)
 		{
 			mscl_sample data = 0.0;
 			for (Synth& synth : synths)
 			{
-				synth.sample = mscl_advance(&synth.engine, sps, speed, synth.channel.size(), synth.channel.data());
+				synth.sample = mscl_advance(&synth.engine, sps, song_speed, synth.channel.size(), synth.channel.data());
 				data += synth.sample;
 			}
 			sample = float(data);
