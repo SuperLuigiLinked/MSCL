@@ -157,8 +157,7 @@ struct mscl_engine
 	size_t event_idx;  ///< Current event index.
 
 	size_t loop_event[MSCL_MAX_LOOPS]; ///< Event index of loop begin.
-	size_t loop_count[MSCL_MAX_LOOPS]; ///< Total number of times to repeat loop.
-	size_t loop_iters[MSCL_MAX_LOOPS]; ///< Counter for loop iterations.
+	size_t loop_count[MSCL_MAX_LOOPS]; ///< Remaining number of times to repeat loop.
 	size_t loop_idx;                   ///< Indicates loop nest-level.
 	
 	mscl_waveform* waveform; ///< Pointer to currently selected Waveform Envelope. NULL defaults to an output value of 0.0.
@@ -181,7 +180,7 @@ typedef struct mscl_engine mscl_engine;
  */
 struct mscl_metadata
 {
-	mscl_time intro_beats; ///< Length of the section before the first Infinite Loop, or 0.0 if there is none.
+	mscl_time intro_beats; ///< Length of the section before the first Infinite Loop, or 0.0 if there are none.
 	mscl_time loop_beats;  ///< Length of the section after the Intro.
 };
 typedef struct mscl_metadata mscl_metadata;

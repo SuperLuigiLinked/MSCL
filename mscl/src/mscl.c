@@ -13,7 +13,6 @@ extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* co
 
 	size_t loop_event[MSCL_MAX_LOOPS] = {0};
 	size_t loop_count[MSCL_MAX_LOOPS] = {0};
-	size_t loop_iters[MSCL_MAX_LOOPS] = {0};
 	size_t loop_idx = 0;
 
 	mscl_metadata metadata = {0};
@@ -36,7 +35,6 @@ extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* co
 			{
 				loop_event[loop_idx] = event_idx;
 				loop_count[loop_idx] = events[event_idx].data.loop_begin;
-				loop_iters[loop_idx] = 0;
 				if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) metadata.intro_beats = song_beats;
 			}
 			++loop_idx;
@@ -50,9 +48,9 @@ extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* co
 				{
 					if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) goto break_loop;
 
-					++loop_iters[loop_idx];
-					if (loop_iters[loop_idx] <= loop_count[loop_idx])
+					if (loop_count[loop_idx] > 0)
 					{
+						--loop_count[loop_idx];
 						event_idx = loop_event[loop_idx];
 						++loop_idx;
 					}
@@ -113,7 +111,6 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
 				{
 					engine->loop_event[engine->loop_idx] = engine->event_idx;
 					engine->loop_count[engine->loop_idx] = event->data.loop_begin;
-					engine->loop_iters[engine->loop_idx] = 0;
 				}
 				++engine->loop_idx;
 			break;
@@ -124,9 +121,9 @@ extern mscl_sample mscl_advance(mscl_engine* const engine, const mscl_time sps, 
 					--engine->loop_idx;
 					if (engine->loop_idx < MSCL_MAX_LOOPS)
 					{
-						++engine->loop_iters[engine->loop_idx];
-						if (engine->loop_iters[engine->loop_idx] <= engine->loop_count[engine->loop_idx])
+						if (engine->loop_count[engine->loop_idx] > 0)
 						{
+							if (engine->loop_count[engine->loop_idx] != MSCL_LOOP_INFINITE) --engine->loop_count[engine->loop_idx];
 							engine->event_idx = engine->loop_event[engine->loop_idx];
 							++engine->loop_idx;
 						}
