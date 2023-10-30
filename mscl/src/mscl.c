@@ -6,7 +6,7 @@
 
 #include <mscl.h>
 
-extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* const events)
+extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* restrict const events)
 {
 	mscl_fp song_beats = 0.0;
 	mscl_fp length = 0.0;
@@ -75,7 +75,7 @@ break_loop:
 	return metadata;
 }
 
-extern mscl_fp mscl_advance(mscl_engine* const engine, const mscl_fp sps, const mscl_fp bpm, const size_t num_events, const mscl_event* const events)
+extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sps, const mscl_fp bpm, const size_t num_events, const mscl_event* restrict const events)
 {
 	if (!engine) return 0;
 
