@@ -1,5 +1,7 @@
 /**
  * @file mscl_demo/songs.hpp
+ *
+ * @brief List of Songs used in the Demo Program.
  */
 
 #pragma once

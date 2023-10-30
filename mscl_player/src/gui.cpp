@@ -16,12 +16,17 @@
 #include <chrono>
 
 #include <mscl.h>
-#include "mscl_player.hpp"
 #include "mscl_gui.hpp"
+#include "mscl_player.hpp"
 #include "utils.hpp"
 
 // ================================================================================================================================
 
+/**
+ * @brief Converts time intervals to text.
+ * @param seconds The amount of seconds.
+ * @return A string formatted as "Minutes:Seconds.milliseconds"
+ */
 inline static std::string time_format(const mscl_fp seconds)
 {
 	const mscl_fp tm = std::floor(seconds / mscl_fp(60));
@@ -34,16 +39,24 @@ inline static std::string time_format(const mscl_fp seconds)
 		return std::format("{}.{:03}", ts, tf);
 }
 
-inline static constexpr auto imodf(const auto a, const auto b) noexcept
+/**
+ * @brief Integer Modulo based on Floored Division.
+ */
+template <typename T> inline static constexpr T imodf(const T a, const T b) noexcept
 {
 	return (a % b) + b * ((a % b) && ((a ^ b) < 0));
 }
 
 // ================================================================================================================================
 
+/**
+ * @brief GUI responsible for visualizing MSCL Songs and handling user-interaction.
+ */
 class MsclGUI : public olc::PixelGameEngine
 {
 private:
+
+	inline static constexpr mscl_fp sps = 48'000.0;
 
 	struct Synth
 	{
@@ -52,8 +65,6 @@ private:
 		mscl_engine engine;
 		mscl_fp sample;
 	};
-
-	inline static constexpr mscl_fp sps = 48'000.0;
 
 	using Clock = std::chrono::steady_clock;
 	using Tick = Clock::time_point;
@@ -82,12 +93,6 @@ private:
 	Ticks tm_select = {};
 	Ticks tm_load = {};
 
-public:
-
-	MsclGUI(const std::span<const mscl::Song> song_list);
-	bool OnUserCreate() final;
-	bool OnUserUpdate(float fElapsedTime) final;
-
 private:
 
 	void update();
@@ -98,6 +103,14 @@ private:
 
 	void select_song(size_t idx);
 	void load_song();
+
+
+public:
+
+	MsclGUI(const std::span<const mscl::Song> song_list);
+	bool OnUserCreate() final;
+	bool OnUserUpdate(float fElapsedTime) final;
+
 };
 
 // ================================================================================================================================
@@ -376,13 +389,13 @@ void MsclGUI::load_song()
 
 namespace mscl
 {
-	extern int gui(std::span<const mscl::Song> song_list, const int width, const int height, const bool fullscreen)
+	extern int gui(const std::span<const mscl::Song> song_list, const int width, const int height, const bool fullscreen)
 	{
 		MsclGUI demo{ song_list };
 		if (!demo.Construct(width, height, 1, 1, fullscreen, true)) return EXIT_FAILURE;
 
-		demo.Start();
-		return EXIT_SUCCESS;
+		const olc::rcode res{ demo.Start() };
+		return (res == olc::OK) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }
 

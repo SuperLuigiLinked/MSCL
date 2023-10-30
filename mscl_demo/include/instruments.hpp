@@ -1,5 +1,7 @@
 /**
  * @file mscl_demo/instruments.hpp
+ *
+ * @brief List of Instruments and Functions used in the Demo Songs.
  */
 
 #pragma once

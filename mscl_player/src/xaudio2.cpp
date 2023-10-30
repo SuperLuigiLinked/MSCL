@@ -1,5 +1,7 @@
 /**
  * @file mscl_player/xaudio2.cpp
+ *
+ * @brief Implementation of the XAudio2 backend.
  */
 
 #include <memory>
@@ -15,6 +17,9 @@ using Microsoft::WRL::ComPtr;
 
 // ================================================================================================================================
 
+/**
+ * @brief XAudio2 Audio Player.
+ */
 class PlayerXAudio2 final : public mscl::Player
 {
 private:

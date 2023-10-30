@@ -1,5 +1,7 @@
 /**
  * @file mscl_player/utils.hpp
+ *
+ * @brief Internal utilities shared by multiple files.
  */
 
 #pragma once
@@ -13,7 +15,7 @@
 // ================================================================================================================================
 
 #if !defined(NDEBUG)
-    #include <stdio.h>
+    #include <cstdio>
     
     #define LOG(...) (void)std::fprintf(stderr, __VA_ARGS__)
     #define ASSERT(expr) if (expr) {} else std::abort()
@@ -23,4 +25,3 @@
 #endif
 
 // ================================================================================================================================
-

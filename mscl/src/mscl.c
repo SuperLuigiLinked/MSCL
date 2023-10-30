@@ -1,7 +1,7 @@
 /**
  * @file mscl/mscl.c
  *
- * @brief MuSiCaL: a Music Synthesis Coding Language
+ * @brief Implementation of MSCL library.
  */
 
 #include <mscl.h>
