@@ -1,14 +1,14 @@
 /**
- * @file mscl_demo/songs/Demo1.hpp
+ * @file mscl_demo/songs/DemoFM.hpp
  */
 
 #pragma once
 
 #include <mscl.h>
-#include <mscl_player.hpp>
+#include <mscl_gui.hpp>
 #include "instruments.hpp"
 
-namespace songs::FM
+namespace songs::DemoFM
 {
 // ================================================================================================================================
 

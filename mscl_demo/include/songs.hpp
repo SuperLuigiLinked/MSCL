@@ -10,7 +10,7 @@
 #include "songs/HappySynth.hpp"
 #include "songs/Menuet.hpp"
 #include "songs/Ghosts.hpp"
-#include "songs/FM.hpp"
+#include "songs/DemoFM.hpp"
 
 inline static constexpr mscl::Song song_list[] = {
 	songs::Demo1::song,
@@ -18,5 +18,5 @@ inline static constexpr mscl::Song song_list[] = {
 	songs::HappySynth::song,
 	songs::Menuet::song,
 	songs::Ghosts::song,
-	songs::FM::song,
+	songs::DemoFM::song,
 };

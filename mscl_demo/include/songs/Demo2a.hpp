@@ -1,11 +1,11 @@
 /**
- * @file mscl_demo/songs/Demo2.hpp
+ * @file mscl_demo/songs/Demo2a.hpp
  */
 
 #pragma once
 
 #include <mscl.h>
-#include <mscl_player.hpp>
+#include <mscl_gui.hpp>
 #include "instruments.hpp"
 
 namespace songs::Demo2

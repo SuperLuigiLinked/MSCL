@@ -5,7 +5,7 @@
 #pragma once
 
 #include <mscl.h>
-#include <mscl_player.hpp>
+#include <mscl_gui.hpp>
 #include "instruments.hpp"
 
 namespace songs::HappySynth
