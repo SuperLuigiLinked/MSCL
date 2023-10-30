@@ -85,7 +85,7 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 
 	while ((engine->event_idx < num_events) && (beats >= engine->next_event))
 	{
-		const mscl_event* const event = events + engine->event_idx;
+		const mscl_event* restrict const event = events + engine->event_idx;
 		switch (event->type)
 		{
 			case mscl_event_rest:

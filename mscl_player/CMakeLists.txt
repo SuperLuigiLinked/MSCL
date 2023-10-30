@@ -33,16 +33,6 @@ target_link_libraries(mscl_player mscl::mscl olc::PGE)
 
 target_compile_features(mscl_player PRIVATE cxx_std_23)
 
-target_compile_options(mscl_player
-    PRIVATE
-        "-Weverything"
-        "-Wno-c++98-compat"
-        "-Wno-c++98-compat-pedantic"
-        "-Wno-old-style-cast"
-        "-Wno-declaration-after-statement"
-        "-Wno-unsafe-buffer-usage"
-        "-Wno-unused-macros"
-        "-Wno-float-equal"
-)
+target_compile_options(mscl_player ${mscl_cflags})
 
 # ================================================================================================================================

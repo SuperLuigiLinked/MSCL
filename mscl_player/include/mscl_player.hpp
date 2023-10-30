@@ -14,7 +14,6 @@ namespace mscl
     {
     public:
         static Player* xaudio2();
-        static Player* wasapi();
 
     public:
         virtual ~Player() = default;

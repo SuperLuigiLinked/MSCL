@@ -43,6 +43,11 @@ template <typename T> inline static T clampn(const T x) noexcept
 	return x;
 }
 
+template <typename T> inline static T clerp(const T a, const T b, const T t) noexcept
+{
+    return a + (b - a) * clampn(t);
+}
+
 template <typename T> inline static T pulse(const T pc, const T duty) noexcept
 {
 	return (normf(pc) < duty) ? 1.0 : -1.0;

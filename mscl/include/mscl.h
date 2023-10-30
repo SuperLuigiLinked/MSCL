@@ -50,6 +50,15 @@ typedef mscl_fp (mscl_envelope)(mscl_fp seconds);
 #define MSCL_TAU 6.28318530717958647692
 
 /**
+ * @brief Convenience cast operator, to avoid language-specific warnings.
+ */
+#ifdef __cplusplus
+#	define MSCL_CAST(T, val) static_cast<T>(val)
+#else
+#	define MSCL_CAST(T, val) ((T)(val))
+#endif
+
+/**
  * @brief A type-generic POW function.
  */
 #ifdef __cplusplus
@@ -67,23 +76,23 @@ typedef mscl_fp (mscl_envelope)(mscl_fp seconds);
 /**
  * @brief Indicator that a section should loop indefinitely.
  */
-#define MSCL_LOOP_INFINITE ((size_t)-1)
+#define MSCL_LOOP_INFINITE MSCL_CAST(size_t, -1)
 
 /**
  * @brief Calculates the Tone representing an (Octave, Note) pair.
  * @note A value of `MSCL_TONE(4, MSCL_C)` represents Middle C.
  */
-#define MSCL_TONE(octave, note) ((mscl_fp)(octave) + ((mscl_fp)(note) / (mscl_fp)(12)))
+#define MSCL_TONE(octave, note) (MSCL_CAST(mscl_fp, (octave)) + (MSCL_CAST(mscl_fp, (note)) / MSCL_CAST(mscl_fp, 12)))
 
 /**
  * @brief Calculates the Frequency for a given Tone.
  * @note This function is tuned such that an input of `MSCL_TONE(4, MSCL_A)` returns 440 Hz.
  */
-#define MSCL_FREQ(tone) ((mscl_fp)(13.75) * (mscl_fp)(MSCL_POW((mscl_fp)(2), (mscl_fp)(tone))))
+#define MSCL_FREQ(tone) (MSCL_CAST(mscl_fp, 13.75) * MSCL_CAST(mscl_fp, MSCL_POW(MSCL_CAST(mscl_fp, 2), MSCL_CAST(mscl_fp, (tone)))))
 
 /**
  * @brief Constants for different Notes in an Octave.
- * @note The values are specified in Semitones from the A Note of the lower octave.
+ * @note The values are specified in Semitones from the A Note of a lower octave.
  */
 enum mscl_note
 {
@@ -108,7 +117,7 @@ enum mscl_event_type
 	mscl_event_volume,     ///< Specifies the volume of upcoming notes.
 	mscl_event_loop_begin, ///< Indicates the beginning of a loop.
 	mscl_event_loop_end,   ///< Indicates the end of a loop.
-	mscl_event_waveform,   ///< Envelope describing a Waveform.
+	mscl_event_waveform,   ///< Function describing a Waveform.
 	mscl_event_sustain,    ///< Envelope describing Sustain volume, relative the currently set volume. 
 	mscl_event_release,    ///< Envelope describing Release volume, relative to the sustain volume at the end of the last played note.
 	mscl_event_vibrato,    ///< Envelope describing Vibrato. 

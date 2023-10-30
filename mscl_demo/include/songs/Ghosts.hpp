@@ -419,8 +419,6 @@ inline static constexpr mscl_event c2[] = {
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_Gs) }},
 	{mscl_event_loop_end, {}},
 
-	// {mscl_event_length, {.length = mscl_fp(16.0 * 1) }},
-	// {mscl_event_rest, {}},
 	{mscl_event_loop_begin, {.loop_begin = 0 }},
 	{mscl_event_volume, {.volume = mscl_fp(0.175) }},
 	{mscl_event_loop_begin, {.loop_begin = 2 }},
@@ -496,9 +494,6 @@ inline static constexpr mscl_event c2[] = {
 	{mscl_event_length, {.length = mscl_fp(1.0 / 2.0) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_D) }},
 	{mscl_event_loop_end, {}},
-
-	// {mscl_event_length, {.length = mscl_fp(16.0 * 1) }},
-	// {mscl_event_rest, {}},
 
 	{mscl_event_length, {.length = mscl_fp(3.0 / 4.0) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_Fs) }},
@@ -597,9 +592,6 @@ inline static constexpr mscl_event c3[] = {
 	{mscl_event_tone, {.tone = MSCL_TONE(5, MSCL_E) }},
 	{mscl_event_loop_end, {}},
 
-	// {mscl_event_length, {.length = mscl_fp(16.0 * 1) }},
-	// {mscl_event_rest, {}},
-
 	{mscl_event_loop_begin, {.loop_begin = 0 }},
 	{mscl_event_volume, {.volume = mscl_fp(0.125) }},
 	{mscl_event_loop_begin, {.loop_begin = 2 }},
@@ -670,9 +662,6 @@ inline static constexpr mscl_event c4[] = {
 	{mscl_event_length, {.length = mscl_fp(1.0 / 1.0) }},
 	{mscl_event_tone, {.tone = MSCL_TONE(4, MSCL_B) }},
 	{mscl_event_loop_end, {}},
-
-	// {mscl_event_length, {.length = mscl_fp(16.0 * 1) }},
-	// {mscl_event_rest, {}},
 
 	{mscl_event_loop_begin, {.loop_begin = 0 }},
 	{mscl_event_volume, {.volume = mscl_fp(0.125) }},
