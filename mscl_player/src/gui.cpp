@@ -252,7 +252,7 @@ void MsclGUI::render()
 
 	const uint32_t scale_dbg = uint32_t(std::max(int(scale_ui) / 2, 1));
 	const int dbg_x = fontsize + chr_w * 0;
-	const int dbg_y = fontsize + chr_h * 4;
+	const int dbg_y = fontsize + chr_h * 3;
 	
 	// Draw HUD
 	{
@@ -264,10 +264,10 @@ void MsclGUI::render()
 		if (debug)
 		{
 			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*0}, "DEBUG MENU", olc::GREY, scale_ui);
-			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*2}, std::format("* Time Update: {:>10} ns", std::chrono::nanoseconds(tm_update).count()), olc::GREY, scale_dbg);
-			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*3}, std::format("* Time Render: {:>10} ns", std::chrono::nanoseconds(tm_render).count()), olc::GREY, scale_dbg);
-			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*4}, std::format("* Time Select: {:>10} ns", std::chrono::nanoseconds(tm_select).count()), olc::GREY, scale_dbg);
-			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*5}, std::format("* Time Load  : {:>10} ns", std::chrono::nanoseconds(tm_load  ).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*1}, std::format("* Time Update: {:>10} ns", std::chrono::nanoseconds(tm_update).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*2}, std::format("* Time Render: {:>10} ns", std::chrono::nanoseconds(tm_render).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*3}, std::format("* Time Select: {:>10} ns", std::chrono::nanoseconds(tm_select).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*4}, std::format("* Time Load  : {:>10} ns", std::chrono::nanoseconds(tm_load  ).count()), olc::GREY, scale_dbg);
 		}
 	}
 
@@ -326,11 +326,21 @@ void MsclGUI::draw_waveform(const int pixel_x, const int pixel_y, const int pixe
 			const int px = nx - 1;
 			const size_t ni = sample_pos + size_t(nx - half_w);
 			const size_t pi = sample_pos + size_t(px - half_w);
-			const float ns = (ni < num_samples) ? samples[ni] : 0.0; 
-			const float ps = (pi < num_samples) ? samples[pi] : 0.0; 
+			const bool nb = ni < num_samples;
+			const bool pb = pi < num_samples;
+			const float ns = nb ? samples[ni] : 0.0;
+			const float ps = pb ? samples[pi] : 0.0;
 			const int ny = half_h - static_cast<int>(float(half_h) * ns);
 			const int py = half_h - static_cast<int>(float(half_h) * ps);
-			this->DrawLine({pixel_x + px, pixel_y + py}, {pixel_x + nx, pixel_y + ny}, color_wav);
+			const olc::vi2d nv = {pixel_x + nx, pixel_y + ny};
+			const olc::vi2d pv = {pixel_x + px, pixel_y + py};
+
+			if (pb && nb)
+				this->DrawLine(pv, nv, color_wav);
+			else if (pb)
+				this->Draw(pv, color_wav);
+			else if (nb)
+				this->Draw(nv, color_wav);
 		}
 	}
 }
