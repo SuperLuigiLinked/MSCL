@@ -57,6 +57,8 @@ class MsclGUI : public olc::PixelGameEngine
 private:
 
 	inline static constexpr mscl_fp sps = 48'000.0;
+	
+	inline static constexpr int fontsize = 8;
 
 	struct Synth
 	{
@@ -104,10 +106,12 @@ private:
 	void select_song(size_t idx);
 	void load_song();
 
+	void draw_waveform(int pixel_x, int pixel_y, int pixel_w, int pixel_h, size_t sample_pos, std::span<const float> sample_buffer, bool loaded);
+	void draw_text(int center_x, int center_y, int scale, olc::Pixel color, const std::string& text);
 
 public:
 
-	MsclGUI(const std::span<const mscl::Song> song_list);
+	MsclGUI(std::span<const mscl::Song> song_list);
 	bool OnUserCreate() final;
 	bool OnUserUpdate(float fElapsedTime) final;
 
@@ -163,8 +167,11 @@ void MsclGUI::update()
 		paused = false;
 		playing = true;
 
-		const double offs_pc = 0.625 * !(playing && loop) * 0;
-		const size_t offs_sp = size_t(double(samples.size()) * offs_pc);
+	#if 0
+		const size_t offs_sp = (playing && loop) ? 0 : size_t(double(samples.size()) * 0.625);
+	#else
+		const size_t offs_sp = 0;
+	#endif
 		const size_t size = samples.size() - offs_sp;
 		const float* const data = samples.data() + offs_sp;
 		player->submit(size, data, sps);
@@ -218,72 +225,63 @@ void MsclGUI::update()
 
 void MsclGUI::render()
 {
-	constexpr int font = 8;
-
-	this->Clear(olc::Pixel(0x18, 0x18, 0x18));
-	const auto [scw, sch] = this->GetScreenSize();
-
-	this->DrawLine({0, sch / 2}, {scw, sch / 2}, olc::Pixel(0x40, 0x40, 0x40));
-
-	const float half = float(sch) / 2;
-	const size_t num_samples = samples.size();
 	const size_t sample_pos = player->pos();
 	const bool playing = player->playing();
+
+	const auto [screen_w, screen_h] = this->GetScreenSize();
+	const int center_x = screen_w / 2;
+	const int center_y = screen_h / 2;
+
 	const mscl_fp seconds = mscl_fp(sample_pos) / sps;
+	const bool looping = !playing && loop;
+	const bool loaded = playing && !loading;
 	
 	const std::string track = std::format("<{}:{}>", song_idx + 1, songs.size());
 	const std::string label = std::format(" {}", songs[song_idx].name);
 	const std::string times = std::format("{} / {}", time_format(seconds), time_format(song_seconds));
 	const olc::Pixel timer_color = (loop ? olc::Pixel(0x00, 0xFF, 0x00) : olc::Pixel(0xA0, 0xA0, 0xA0));
 	
-	const int len_ui = int(std::max(track.size() + label.size(), times.size()));
-	const float ui_limit = float(scw) / float(font * len_ui);
-	const uint32_t scale_ui = uint32_t(std::clamp(int(ui_limit), 1, 2));
-	const int chr_w = font * int(scale_ui);
-	const int chr_h = font * int(scale_ui) + font;
-	const int ui_x = font + chr_w * 0;
-	const int ui_y = font + chr_h * 0;
-
-	this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*0}, track, olc::DARK_GREY, scale_ui);
-	this->DrawString({ui_x+chr_w*int(track.size()), ui_y+chr_h*0}, label, olc::WHITE, scale_ui);
-	this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*1}, times, timer_color, scale_ui);
+	const int length_ui = int(std::max(track.size() + label.size(), times.size()));
+	const float limit_ui = float(screen_w) / float(fontsize * length_ui);
 	
-	if (debug)
-	{
-		const uint32_t scale_dbg = uint32_t(std::max(int(scale_ui) / 2, 1));
-		const int dbg_x = font + chr_w * 0;
-		const int dbg_y = font + chr_h * 3;
-		this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*0}, "DEBUG MENU", olc::GREY, scale_ui);
-		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*1}, std::format("* Time Update: {:>10} ns", std::chrono::nanoseconds(tm_update).count()), olc::GREY, scale_dbg);
-		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*2}, std::format("* Time Render: {:>10} ns", std::chrono::nanoseconds(tm_render).count()), olc::GREY, scale_dbg);
-		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*3}, std::format("* Time Select: {:>10} ns", std::chrono::nanoseconds(tm_select).count()), olc::GREY, scale_dbg);
-		this->DrawString({dbg_x+chr_w*0, font+dbg_y+chr_h*4}, std::format("* Time Load  : {:>10} ns", std::chrono::nanoseconds(tm_load  ).count()), olc::GREY, scale_dbg);
-	}
+	const uint32_t scale_ui = uint32_t(std::clamp(int(limit_ui), 1, 2));
+	const int chr_w = fontsize * int(scale_ui);
+	const int chr_h = fontsize * int(scale_ui) + fontsize;
+	const int ui_x = fontsize + chr_w * 0;
+	const int ui_y = fontsize + chr_h * 0;
 
-	if (playing && !loading)
+	const uint32_t scale_dbg = uint32_t(std::max(int(scale_ui) / 2, 1));
+	const int dbg_x = fontsize + chr_w * 0;
+	const int dbg_y = fontsize + chr_h * 4;
+	
+	// Draw HUD
 	{
-		for (int x = 0; x <= scw; ++x)
+		this->Clear(olc::Pixel(0x18, 0x18, 0x18));
+		this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*0}, track, olc::DARK_GREY, scale_ui);
+		this->DrawString({ui_x+chr_w*int(track.size()), ui_y+chr_h*0}, label, olc::WHITE, scale_ui);
+		this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*1}, times, timer_color, scale_ui);
+		
+		if (debug)
 		{
-			const int px = x - (scw / 2) - 1;
-			const int nx = x - (scw / 2);
-
-			const size_t pi = sample_pos + size_t(px);
-			const size_t ni = sample_pos + size_t(nx);
-
-			const float poffs = (pi < num_samples) ? samples[pi] : 0.0; 
-			const float noffs = (ni < num_samples) ? samples[ni] : 0.0; 
-
-			const int py = static_cast<int>(half - half * poffs);
-			const int ny = static_cast<int>(half - half * noffs);
-			this->DrawLine({x-1, py}, {x, ny}, olc::Pixel(0xFF, 0xFF, 0xFF));
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*0}, "DEBUG MENU", olc::GREY, scale_ui);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*2}, std::format("* Time Update: {:>10} ns", std::chrono::nanoseconds(tm_update).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*3}, std::format("* Time Render: {:>10} ns", std::chrono::nanoseconds(tm_render).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*4}, std::format("* Time Select: {:>10} ns", std::chrono::nanoseconds(tm_select).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*5}, std::format("* Time Load  : {:>10} ns", std::chrono::nanoseconds(tm_load  ).count()), olc::GREY, scale_dbg);
 		}
 	}
 
+	// Draw waveform
+	{
+		this->draw_waveform(0, 0, screen_w, screen_h, sample_pos, samples, loaded);
+	}
+
+	// Draw center-text
 	{
 		std::string msg{};
 		olc::Pixel color = olc::WHITE;
 
-		if (loading || (loop & !playing))
+		if (loading || looping)
 		{
 			msg = "LOADING...";
 			color = olc::GREY;
@@ -298,16 +296,53 @@ void MsclGUI::render()
 			msg = "Press SPACE to play!";
 		}
 
-		const int chars = int(msg.size());
-		const float x_limit = float(scw) / float(font * chars);
-		const float y_limit = float(sch) / float(font * 1);
-		const int scale = std::clamp(std::min(int(x_limit), int(y_limit)), 1, 4);
-		const int tw = (scale * font) * chars;
-		const int th = (scale * font) * 1;
-		const int tx = (scw - tw) / 2;
-		const int ty = (sch - th) / 2;
-		this->DrawString({tx, ty}, msg, color, uint32_t(scale));
+		const int length = int(msg.size());
+		if (length > 0)
+		{
+			const int limit_x = screen_w / (fontsize * length);
+			const int limit_y = screen_h / (fontsize * 1);
+			const int limit = std::min(limit_x, limit_y);
+			const int scale = std::clamp(limit, 1, 4);
+			this->draw_text(center_x, center_y, scale, color, msg);
+		}
 	}
+}
+
+void MsclGUI::draw_waveform(const int pixel_x, const int pixel_y, const int pixel_w, const int pixel_h, const size_t sample_pos, const std::span<const float> sample_buffer, const bool loaded)
+{
+	const olc::Pixel color_wav = olc::WHITE;
+	const olc::Pixel color_hud = olc::Pixel(0x40, 0x40, 0x40);
+
+	const size_t num_samples = sample_buffer.size();
+	const int half_w = pixel_w / 2;
+	const int half_h = pixel_h / 2;
+
+	this->DrawLine({pixel_x, pixel_y + half_h}, {pixel_x + pixel_w - 1, pixel_y + half_h}, color_hud);
+
+	if (loaded)
+	{
+		for (int nx = 1; nx < pixel_w; ++nx)
+		{
+			const int px = nx - 1;
+			const size_t ni = sample_pos + size_t(nx - half_w);
+			const size_t pi = sample_pos + size_t(px - half_w);
+			const float ns = (ni < num_samples) ? samples[ni] : 0.0; 
+			const float ps = (pi < num_samples) ? samples[pi] : 0.0; 
+			const int ny = half_h - static_cast<int>(float(half_h) * ns);
+			const int py = half_h - static_cast<int>(float(half_h) * ps);
+			this->DrawLine({pixel_x + px, pixel_y + py}, {pixel_x + nx, pixel_y + ny}, color_wav);
+		}
+	}
+}
+
+void MsclGUI::draw_text(const int center_x, const int center_y, const int scale, const olc::Pixel color, const std::string& text)
+{
+	const int length = int(text.size());
+	const int text_w = (scale * fontsize) * length;
+	const int text_h = (scale * fontsize) * 1;
+	const int text_x = center_x - text_w / 2;
+	const int text_y = center_y - text_h / 2;
+	this->DrawString({text_x, text_y}, text, color, uint32_t(scale));
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------
