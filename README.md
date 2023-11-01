@@ -13,6 +13,7 @@ MSCL-Player is C++ Library that allows you to play MSCL Songs and visualize wave
 * **Arrow-Keys**: Cycle through song list.
 * **Backspace**: Rewind to beginning of song.
 * **Enter**: Toggle looping.
+* **Tab**: Toggle multi-channel view.
 * **Escape**: Toggle debug-mode.
 
 ## MSCL-Demo

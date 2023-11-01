@@ -47,6 +47,20 @@ template <typename T> inline static constexpr T imodf(const T a, const T b) noex
 	return (a % b) + b * ((a % b) && ((a ^ b) < 0));
 }
 
+inline static olc::Pixel hue(const float pc) noexcept
+{
+	const float npc = pc - std::floor(pc);
+	const int offs = int(std::floor((255 * 3) * npc)) % 255;
+	const int step = int(npc * 3);
+	switch (step)
+	{
+	case 0: return olc::Pixel(uint8_t(255 - offs), uint8_t(offs), uint8_t(0));
+	case 1: return olc::Pixel(uint8_t(0), uint8_t(255 - offs), uint8_t(offs));
+	case 2: return olc::Pixel(uint8_t(offs), uint8_t(0), uint8_t(255 - offs));
+	default: return olc::Pixel();
+	}
+}
+
 // ================================================================================================================================
 
 /**
@@ -79,16 +93,20 @@ private:
 	size_t loaded_idx = size_t(-1);
 	
 	size_t main_channel = {};
+	size_t song_channels = {};
+	size_t song_samples = {}; 
 	mscl_fp song_seconds = {};
 
 	std::unique_ptr<mscl::Player> player = {};
 	std::vector<float> samples = {};
+	std::vector<float> channels = {};
 	std::vector<Synth> synths = {};
 
 	bool loop = false;
 	bool paused = false;
 	bool loading = false;
 
+	bool multichannel = false;
 	bool debug = false;
 	Ticks tm_update = {};
 	Ticks tm_render = {};
@@ -106,7 +124,7 @@ private:
 	void select_song(size_t idx);
 	void load_song();
 
-	void draw_waveform(int pixel_x, int pixel_y, int pixel_w, int pixel_h, size_t sample_pos, std::span<const float> sample_buffer, bool loaded);
+	void draw_waveform(int pixel_x, int pixel_y, int pixel_w, int pixel_h, size_t sample_pos, std::span<const float> sample_buffer, bool loaded, olc::Pixel color_wav = olc::WHITE);
 	void draw_text(int center_x, int center_y, int scale, olc::Pixel color, const std::string& text);
 
 public:
@@ -213,6 +231,11 @@ void MsclGUI::update()
 		if (loop) loading = true;
 	}
 
+	if (this->GetKey(olc::Key::TAB).bPressed)
+	{
+		multichannel = !multichannel;
+	}
+
 	if (this->GetKey(olc::Key::ESCAPE).bPressed)
 	{
 		debug = !debug;
@@ -254,9 +277,41 @@ void MsclGUI::render()
 	const int dbg_x = fontsize + chr_w * 0;
 	const int dbg_y = fontsize + chr_h * 3;
 	
+	this->Clear(olc::Pixel(0x18, 0x18, 0x18));
+
+	// Draw waveform
+	{
+		const int wav_x = 0;
+		const int wav_y = 0;
+		const int wav_w = screen_w;
+		const int wav_h = screen_h;
+
+		if (multichannel)
+		{
+			for (size_t ci = 0; ci < song_channels; ++ci)
+			{
+				const float pc = float(ci) / float(song_channels);
+
+				const int half_c = int(std::ceil(float(song_channels) / 2.0f));
+				const int xi = int(ci) % half_c;
+				const int yi = int(ci) / half_c;
+
+				const int w = wav_w / half_c;
+				const int h = wav_h / 2;
+				const int x = wav_x + xi * w;
+				const int y = wav_y + yi * h;
+				const olc::Pixel color = hue(pc);
+				const size_t index = song_samples * ci;
+				const std::span<const float> buffer{ channels.data() + index, song_samples };
+
+				this->draw_waveform(x, y, w, h, sample_pos, buffer, loaded, color);
+			}
+		}
+		this->draw_waveform(wav_x, wav_y, wav_w, wav_h, sample_pos, samples, loaded);
+	}
+
 	// Draw HUD
 	{
-		this->Clear(olc::Pixel(0x18, 0x18, 0x18));
 		this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*0}, track, olc::DARK_GREY, scale_ui);
 		this->DrawString({ui_x+chr_w*int(track.size()), ui_y+chr_h*0}, label, olc::WHITE, scale_ui);
 		this->DrawString({ui_x+chr_w*0                , ui_y+chr_h*1}, times, timer_color, scale_ui);
@@ -268,12 +323,12 @@ void MsclGUI::render()
 			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*2}, std::format("* Time Render: {:>10} ns", std::chrono::nanoseconds(tm_render).count()), olc::GREY, scale_dbg);
 			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*3}, std::format("* Time Select: {:>10} ns", std::chrono::nanoseconds(tm_select).count()), olc::GREY, scale_dbg);
 			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*4}, std::format("* Time Load  : {:>10} ns", std::chrono::nanoseconds(tm_load  ).count()), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*5}, std::format("* Channels: {}", song_channels), olc::GREY, scale_dbg);
+			if (loaded_idx == song_idx)
+				this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*6}, std::format("* Samples : {}", song_samples ), olc::GREY, scale_dbg);
+			else
+				this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*6}, std::format("* Samples : -"), olc::GREY, scale_dbg);
 		}
-	}
-
-	// Draw waveform
-	{
-		this->draw_waveform(0, 0, screen_w, screen_h, sample_pos, samples, loaded);
 	}
 
 	// Draw center-text
@@ -308,10 +363,9 @@ void MsclGUI::render()
 	}
 }
 
-void MsclGUI::draw_waveform(const int pixel_x, const int pixel_y, const int pixel_w, const int pixel_h, const size_t sample_pos, const std::span<const float> sample_buffer, const bool loaded)
+void MsclGUI::draw_waveform(const int pixel_x, const int pixel_y, const int pixel_w, const int pixel_h, const size_t sample_pos, const std::span<const float> sample_buffer, const bool loaded, const olc::Pixel color_wav)
 {
-	const olc::Pixel color_wav = olc::WHITE;
-	const olc::Pixel color_hud = olc::Pixel(0x40, 0x40, 0x40);
+	const olc::Pixel color_hud = color_wav / 4;
 
 	const size_t num_samples = sample_buffer.size();
 	const int half_w = pixel_w / 2;
@@ -328,8 +382,8 @@ void MsclGUI::draw_waveform(const int pixel_x, const int pixel_y, const int pixe
 			const size_t pi = sample_pos + size_t(px - half_w);
 			const bool nb = ni < num_samples;
 			const bool pb = pi < num_samples;
-			const float ns = nb ? samples[ni] : 0.0;
-			const float ps = pb ? samples[pi] : 0.0;
+			const float ns = nb ? sample_buffer[ni] : 0.0;
+			const float ps = pb ? sample_buffer[pi] : 0.0;
 			const int ny = half_h - static_cast<int>(float(half_h) * ns);
 			const int py = half_h - static_cast<int>(float(half_h) * ps);
 			const olc::vi2d nv = {pixel_x + nx, pixel_y + ny};
@@ -379,11 +433,11 @@ void MsclGUI::select_song(const size_t idx)
 			player->stop();
 			song_idx = sel_idx;
 
-			const size_t num_channels = songs[song_idx].channels.size();
-			synths.resize(num_channels);
+			song_channels = songs[song_idx].channels.size();
+			synths.resize(song_channels);
 
 			mscl_fp max_beats = 0.0;
-			for (size_t i = 0; i < num_channels; ++i)
+			for (size_t i = 0; i < song_channels; ++i)
 			{
 				synths[i].channel = songs[song_idx].channels.begin()[i];
 				synths[i].metadata = mscl_estimate(synths[i].channel.size(), synths[i].channel.data());
@@ -412,17 +466,20 @@ void MsclGUI::load_song()
 			loaded_idx = song_idx;
 
 			init_engines();
-			samples.resize(size_t(song_seconds * sps));
+			song_samples = size_t(song_seconds * sps);
+			samples.resize(song_samples);
+			channels.resize(song_samples * song_channels);
 
-			for (float& sample : samples)
+			for (size_t si = 0; si < song_samples; ++si)
 			{
 				mscl_fp data = 0.0;
-				for (Synth& synth : synths)
+				for (size_t ci = 0; ci < song_channels; ++ci)
 				{
-					synth.sample = mscl_advance(&synth.engine, sps, songs[song_idx].bpm, synth.channel.size(), synth.channel.data());
-					data += synth.sample;
+					synths[ci].sample = mscl_advance(&synths[ci].engine, sps, songs[song_idx].bpm, synths[ci].channel.size(), synths[ci].channel.data());
+					data += synths[ci].sample;
+					channels[song_samples * ci + si] = float(synths[ci].sample); 
 				}
-				sample = float(data);
+				samples[si] = float(data);
 			}
 		}
 	}
