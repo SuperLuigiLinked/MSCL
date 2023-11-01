@@ -8,8 +8,8 @@
 
 extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* restrict const events)
 {
-	mscl_fp song_beats = 0.0;
-	mscl_fp length = 0.0;
+	mscl_fp song_beats = 0;
+	mscl_fp length = 0;
 
 	size_t loop_event[MSCL_MAX_LOOPS] = {0};
 	size_t loop_count[MSCL_MAX_LOOPS] = {0};
@@ -79,9 +79,13 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 {
 	if (!engine) return 0;
 
-	const mscl_fp speed = bpm / (mscl_fp)60;
 	const mscl_fp seconds = (mscl_fp)engine->sample_idx / sps;
+	const mscl_fp speed = bpm / (mscl_fp)60;
 	const mscl_fp beats = seconds * speed;
+	++engine->sample_idx;
+
+	_Bool loop_infinite = 0;
+	_Bool loop_empty = 1;
 
 	while ((engine->event_idx < num_events) && (beats >= engine->next_event))
 	{
@@ -90,6 +94,7 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 		{
 			case mscl_event_rest:
 				engine->next_event += engine->length;
+				if (engine->length > 0) loop_empty = 0;
 			break;
 
 			case mscl_event_tone:
@@ -97,10 +102,11 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 				engine->event_s = engine->next_event;
 				engine->event_r = engine->next_event + engine->length;
 				engine->next_event += engine->length;
+				if (engine->length > 0) loop_empty = 0;
 			break;
 
 			case mscl_event_length:
-				engine->length = event->data.length;
+				engine->length = (event->data.length <= 0) ? (mscl_fp)0 : event->data.length;
 			break;
 
 			case mscl_event_volume:
@@ -108,6 +114,7 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 			break;
 
 			case mscl_event_loop_begin:
+				loop_empty = 1;
 				if (engine->loop_idx < MSCL_MAX_LOOPS)
 				{
 					engine->loop_event[engine->loop_idx] = engine->event_idx;
@@ -124,7 +131,8 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 					{
 						if (engine->loop_count[engine->loop_idx] > 0)
 						{
-							if (engine->loop_count[engine->loop_idx] != MSCL_LOOP_INFINITE) --engine->loop_count[engine->loop_idx];
+							loop_infinite = (engine->loop_count[engine->loop_idx] == MSCL_LOOP_INFINITE);
+							if (!loop_infinite) --engine->loop_count[engine->loop_idx];
 							engine->event_idx = engine->loop_event[engine->loop_idx];
 							++engine->loop_idx;
 						}
@@ -132,7 +140,8 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 				}
 				else // Unbalanced LOOP-END statements are treated as Infinite Loops.
 				{
-					engine->event_idx = 0;
+					loop_infinite = 1;
+					engine->event_idx = (engine->event_idx == 0) ? (size_t)-1 : 0;
 				}
 			break;
 
@@ -153,6 +162,9 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 			break;
 		}
 		++engine->event_idx;
+
+		// Prevent empty Infinite Loops from freezing engine.
+		if (loop_empty && loop_infinite) break;
 	}
 
 	const mscl_fp sustain_beats = beats - engine->event_s;
@@ -165,18 +177,17 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 
 	const mscl_fp d_sample = engine->vibrato
 		? MSCL_POW((mscl_fp)2, engine->vibrato(sustain_seconds) / (mscl_fp)12)
-		: (mscl_fp)1.0;
+		: (mscl_fp)1;
 	
 	const mscl_fp w_sample = engine->waveform
 		? engine->waveform(sustain_seconds, engine->frequency * d_sample)
-		: (mscl_fp)0.0;
+		: (mscl_fp)0;
 
 	const mscl_fp e_sample = (release_seconds < 0)
-		? (engine->sustain ? engine->sustain(sustain_seconds) : (mscl_fp)1.0)
-		: (engine->release ? engine->sustain(tone_seconds) * engine->release(release_seconds) : (mscl_fp)0.0);
+		? (engine->sustain ? engine->sustain(sustain_seconds) : (mscl_fp)1)
+		: (engine->release ? engine->sustain(tone_seconds) * engine->release(release_seconds) : (mscl_fp)0);
 
 	const mscl_fp sample = w_sample * e_sample * engine->volume; 
 
-	++engine->sample_idx;
 	return sample;
 }
