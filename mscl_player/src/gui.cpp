@@ -292,12 +292,14 @@ void MsclGUI::render()
 			{
 				const float pc = float(ci) / float(song_channels);
 
-				const int half_c = int(std::ceil(float(song_channels) / 2.0f));
-				const int xi = int(ci) % half_c;
-				const int yi = int(ci) / half_c;
+				constexpr int rows = 2;
+				const int cols = int(std::ceil(float(song_channels) / float(rows)));
+				const int xi = int(ci) % cols;
+				const int yi = int(ci) / cols;
+				const int elems = std::min(cols, int(song_channels) - cols * yi);
 
-				const int w = wav_w / half_c;
-				const int h = wav_h / 2;
+				const int w = wav_w / elems;
+				const int h = wav_h / rows;
 				const int x = wav_x + xi * w;
 				const int y = wav_y + yi * h;
 				const olc::Pixel color = hue(pc);
