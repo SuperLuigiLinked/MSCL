@@ -172,10 +172,19 @@ void MsclGUI::update()
 
 	if (this->GetKey(olc::Key::BACK).bPressed)
 	{
-		paused = false;
-		playing = false;
-
 		player->stop();
+
+		if (paused)
+		{
+			player->submit(samples.size(), samples.data(), sps);
+			paused = true;
+			playing = true;
+		}
+		else
+		{
+			paused = false;
+			playing = false;
+		}
 	}
 
 	if (loading || (!playing && loop))
@@ -326,10 +335,7 @@ void MsclGUI::render()
 			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*3}, std::format("* Time Select: {:>10} ns", std::chrono::nanoseconds(tm_select).count()), olc::GREY, scale_dbg);
 			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*4}, std::format("* Time Load  : {:>10} ns", std::chrono::nanoseconds(tm_load  ).count()), olc::GREY, scale_dbg);
 			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*5}, std::format("* Channels: {}", song_channels), olc::GREY, scale_dbg);
-			if (loaded_idx == song_idx)
-				this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*6}, std::format("* Samples : {}", song_samples ), olc::GREY, scale_dbg);
-			else
-				this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*6}, std::format("* Samples : -"), olc::GREY, scale_dbg);
+			this->DrawString({dbg_x+chr_w*0, dbg_y+chr_h*6}, std::format("* Samples : {}", size_t(song_seconds * sps)), olc::GREY, scale_dbg);
 		}
 	}
 
