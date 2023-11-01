@@ -126,10 +126,16 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 					{
 						if (engine->loop_count[engine->loop_idx] > 0)
 						{
-							if (engine->loop_count[engine->loop_idx] != MSCL_LOOP_INFINITE) --engine->loop_count[engine->loop_idx];
+							if (engine->loop_count[engine->loop_idx] == MSCL_LOOP_INFINITE)
+							{
+								++loop_repeats;
+							}
+							else
+							{
+								--engine->loop_count[engine->loop_idx];
+							}
 							engine->event_idx = engine->loop_event[engine->loop_idx];
 							++engine->loop_idx;
-							++loop_repeats;
 						}
 					}
 				}
