@@ -47,7 +47,6 @@ extern mscl_metadata mscl_estimate(const size_t num_events, const mscl_event* re
 				if (loop_idx < MSCL_MAX_LOOPS)
 				{
 					if (loop_count[loop_idx] == MSCL_LOOP_INFINITE) goto break_loop;
-
 					if (loop_count[loop_idx] > 0)
 					{
 						--loop_count[loop_idx];
@@ -84,8 +83,7 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 	const mscl_fp beats = seconds * speed;
 	++engine->sample_idx;
 
-	_Bool loop_infinite = 0;
-	_Bool loop_empty = 1;
+	int loop_repeats = 0;
 
 	while ((engine->event_idx < num_events) && (beats >= engine->next_event))
 	{
@@ -94,7 +92,6 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 		{
 			case mscl_event_rest:
 				engine->next_event += engine->length;
-				if (engine->length > 0) loop_empty = 0;
 			break;
 
 			case mscl_event_tone:
@@ -102,7 +99,6 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 				engine->event_s = engine->next_event;
 				engine->event_r = engine->next_event + engine->length;
 				engine->next_event += engine->length;
-				if (engine->length > 0) loop_empty = 0;
 			break;
 
 			case mscl_event_length:
@@ -114,7 +110,6 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 			break;
 
 			case mscl_event_loop_begin:
-				loop_empty = 1;
 				if (engine->loop_idx < MSCL_MAX_LOOPS)
 				{
 					engine->loop_event[engine->loop_idx] = engine->event_idx;
@@ -131,17 +126,17 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 					{
 						if (engine->loop_count[engine->loop_idx] > 0)
 						{
-							loop_infinite = (engine->loop_count[engine->loop_idx] == MSCL_LOOP_INFINITE);
-							if (!loop_infinite) --engine->loop_count[engine->loop_idx];
+							if (engine->loop_count[engine->loop_idx] != MSCL_LOOP_INFINITE) --engine->loop_count[engine->loop_idx];
 							engine->event_idx = engine->loop_event[engine->loop_idx];
 							++engine->loop_idx;
+							++loop_repeats;
 						}
 					}
 				}
 				else // Unbalanced LOOP-END statements are treated as Infinite Loops.
 				{
-					loop_infinite = 1;
-					engine->event_idx = (engine->event_idx == 0) ? (size_t)-1 : 0;
+					engine->event_idx = (size_t)-1;
+					++loop_repeats;
 				}
 			break;
 
@@ -164,7 +159,7 @@ extern mscl_fp mscl_advance(mscl_engine* restrict const engine, const mscl_fp sp
 		++engine->event_idx;
 
 		// Prevent empty Infinite Loops from freezing engine.
-		if (loop_empty && loop_infinite) break;
+		if (loop_repeats > 1) break;
 	}
 
 	const mscl_fp sustain_beats = beats - engine->event_s;
