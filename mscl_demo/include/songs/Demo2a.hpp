@@ -13,7 +13,7 @@ namespace songs::Demo2
 // ================================================================================================================================
 
 inline static constexpr mscl_event c0[] = {
-	{mscl_event_volume, {.volume = mscl_fp(0.20) }},
+	{mscl_event_volume, {.volume = mscl_fp(0.10) }},
 	{mscl_event_sustain, {.sustain = env_fade }},
 	{mscl_event_release, {.release = rel_drop }},
 	{mscl_event_vibrato, {.vibrato = vib_medium }},

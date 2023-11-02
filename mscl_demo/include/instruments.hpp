@@ -11,7 +11,7 @@
 
 // ================================================================================================================================
 
-template <typename T> inline static auto idivf(const T a, const T b) noexcept
+template <typename T> inline static T idivf(const T a, const T b) noexcept
 {
 	return (a / b) - ((a % b) && ((a ^ b) < 0));
 }
@@ -21,10 +21,12 @@ template <typename T> inline static T imodf(const T a, const T b) noexcept
 	return (a % b) + b * ((a % b) && ((a ^ b) < 0));
 }
 
-template <typename T> inline static T fmodf(const T a, const T b) noexcept
+template <typename T> inline static T modf(const T a, const T b) noexcept
 {
 	return a - b * std::floor(a / b);
 }
+
+// --------------------------------------------------------------------------------------------------------------------------------
 
 template <typename T> inline static T normf(const T x) noexcept
 {
@@ -50,14 +52,48 @@ template <typename T> inline static T clerp(const T a, const T b, const T t) noe
     return a + (b - a) * clampn(t);
 }
 
-template <typename T> inline static T pulse(const T pc, const T duty) noexcept
+template <typename T> inline static T plerp1(const T a, const T b, const T p, const T t) noexcept
 {
-	return (normf(pc) < duty) ? 1.0 : -1.0;
+	return a + (b - a) * std::pow(clampn(t), p);
 }
 
-template <typename T> inline static T nsine(const T pc) noexcept
+template <typename T> inline static T plerp2(const T a, const T b, const T p, const T t) noexcept
+{
+	return b + (a - b) * std::pow(T(1) - clampn(t), p);
+}
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
+template <typename T> inline static T nsin(const T pc) noexcept
 {
 	return std::sin(T(MSCL_TAU) * normf(pc));
+}
+
+template <typename T> inline static T ncos(const T pc) noexcept
+{
+	return std::cos(T(MSCL_TAU) * normf(pc));
+}
+
+template <typename T> inline static T nsaw(const T pc) noexcept
+{
+	return T(2) * normf(pc - T(0.5)) - T(1);
+}
+
+template <typename T> inline static T ntri(const T pc) noexcept
+{
+	const T npc = normf(pc);
+	return (npc < T(0.5)) ? T(1) - T(4) * std::fabs(npc - T(0.25)) : T(4) * std::fabs(npc - T(0.75)) - T(1);
+}
+
+template <typename T> inline static T pulse(const T pc, const T duty) noexcept
+{
+	return (normf(pc) < duty) ? T(1.0) : T(-1.0);
+}
+
+template <typename T> inline static T sinus(const T pc, const T duty) noexcept
+{
+	const T npc = normf(pc);
+	return (npc < duty) ? std::sin(T(MSCL_PI) * (npc / duty)) : std::sin(T(MSCL_PI) * ((npc - duty) / (duty - T(1.0))));
 }
 
 template <typename T> inline static T harmonic(const T pc, const T h) noexcept
@@ -65,53 +101,56 @@ template <typename T> inline static T harmonic(const T pc, const T h) noexcept
 	return std::sin(T(MSCL_TAU) * normf(pc) * h) / h;
 }
 
-template <typename T> inline static T sinus(const T pc, const T duty) noexcept
-{
-	const T npc = normf(pc);
-	return (npc < duty) ? std::sin(T(MSCL_PI) * (npc / duty)) : std::sin(T(MSCL_PI) * ((npc - duty) / (duty - 1.0)));
-}
-
 // ================================================================================================================================
 
 inline mscl_fp wav_sine(const mscl_fp s, const mscl_fp f)
 {
-	return nsine(s * f);
+	return nsin(s * f);
 }
 
 inline mscl_fp wav_square(const mscl_fp s, const mscl_fp f)
 {
-	//return (normf(mscl_fp(pc)) < mscl_fp(0.5) ? mscl_fp(0.5) : mscl_fp(-0.5));
-	return clampf(mscl_fp(25.0) * nsine(s * f), mscl_fp(-0.5), mscl_fp(0.5));
+	// return clampf(mscl_fp(25.0) * nsin(s * f), mscl_fp(-0.5), mscl_fp(0.5));
+	return pulse(s * f, mscl_fp(0.5));
 }
 
 inline mscl_fp wav_pulse_25(const mscl_fp s, const mscl_fp f)
 {
-	return mscl_fp(0.5) * pulse(s * f, mscl_fp(0.25));
+	return pulse(s * f, mscl_fp(0.25));
 }
 
 inline mscl_fp wav_pulse_125(const mscl_fp s, const mscl_fp f)
 {
-	return mscl_fp(0.5) * pulse(s * f, mscl_fp(0.125));
+	return pulse(s * f, mscl_fp(0.125));
 }
 
 inline mscl_fp wav_saw(const mscl_fp s, const mscl_fp f)
 {
-	return normf(s * f) - mscl_fp(0.5);
+	// return normf(s * f) - mscl_fp(0.5);
+	return nsaw(s * f);
 }
 
 inline mscl_fp wav_tri(const mscl_fp s, const mscl_fp f)
 {
-	return std::fabs(normf(s * f) - mscl_fp(0.5)) * mscl_fp(2.0) - mscl_fp(0.5);
+	// return std::fabs(normf(s * f) - mscl_fp(0.5)) * mscl_fp(2.0) - mscl_fp(0.5);
+	return ntri(s * f);
 }
 
 inline mscl_fp wav_fin(const mscl_fp s, const mscl_fp f)
 {
-	constexpr mscl_fp exp = mscl_fp(1.0 / 2.0);
-	const mscl_fp xs = fmodf(s * f, mscl_fp(0.5));
-	const mscl_fp xn = normf(s * f);
-	const mscl_fp sine = std::pow(std::sin(mscl_fp(MSCL_PI) * xs), exp) - mscl_fp(0.5);
-	const mscl_fp sign = (xn < mscl_fp(0.5) ? mscl_fp(1.0) : mscl_fp(-1.0));
-	return sine * sign;
+	// constexpr mscl_fp exp = mscl_fp(1.0 / 2.0);
+	// const mscl_fp xs = modf(s * f, mscl_fp(0.5));
+	// const mscl_fp xn = normf(s * f);
+	// const mscl_fp sine = std::pow(std::sin(mscl_fp(MSCL_PI) * xs), exp) - mscl_fp(0.5);
+	// const mscl_fp sign = (xn < mscl_fp(0.5) ? mscl_fp(1.0) : mscl_fp(-1.0));
+	// return 2 * sine * sign;
+	const mscl_fp adj = std::sqrt(mscl_fp(3)) * mscl_fp(0.25) + mscl_fp(0.5);
+	const mscl_fp pc = s * f - adj;
+	const mscl_fp npc = normf(pc);
+	const mscl_fp rpc = modf(pc, mscl_fp(0.5));
+	const mscl_fp sine = std::sin(std::acos(mscl_fp(2) * rpc - mscl_fp(1))) - mscl_fp(0.5);
+	const mscl_fp sign = (npc < mscl_fp(0.5)) ? mscl_fp(1.0) : mscl_fp(-1.0);
+	return sine * sign * mscl_fp(2);
 }
 
 inline mscl_fp wav_noise(const mscl_fp s [[maybe_unused]], const mscl_fp f [[maybe_unused]])
@@ -119,13 +158,22 @@ inline mscl_fp wav_noise(const mscl_fp s [[maybe_unused]], const mscl_fp f [[may
 	return mscl_fp(rand()) / mscl_fp(RAND_MAX) - mscl_fp(0.5);
 }
 
-inline mscl_fp wav_fm(const mscl_fp s, const mscl_fp f)
+inline mscl_fp wav_as(const mscl_fp s, const mscl_fp f)
 {
 	const mscl_fp pc = s * f;
 	return harmonic(pc, mscl_fp(1))
 		+ harmonic(pc, mscl_fp(2))
 		+ harmonic(pc, mscl_fp(3))
 	;
+}
+
+inline mscl_fp wav_fm(const mscl_fp s, const mscl_fp f)
+{
+	constexpr mscl_fp pi_2 = mscl_fp(MSCL_PI) / 2;
+	const mscl_fp amp = pi_2;
+	const mscl_fp f1 = 2 * f;
+	const mscl_fp f2 = 2 * f;
+	return mscl_fp(0.5) * nsin(((f1 * s) + (amp * nsin(f2 * s))) / (2 * 4));
 }
 
 // ================================================================================================================================
