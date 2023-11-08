@@ -47,11 +47,39 @@ template <typename T> inline static constexpr T imodf(const T a, const T b) noex
 	return (a % b) + b * ((a % b) && ((a ^ b) < 0));
 }
 
-inline static olc::Pixel hue(const float pc) noexcept
+// --------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * @brief Calculates a Color from a Hue in the range [0.0, 1.0).
+ */
+inline static olc::Pixel hue [[maybe_unused]] (const float pc) noexcept
+{
+	const float npc = pc - std::floor(pc);
+	const int offs = int(std::floor((255 * 6) * npc)) % 255;
+	const int step = int(npc * 6);
+	
+	switch (step)
+	{
+	case 0: return olc::Pixel(uint8_t(255), uint8_t(offs), uint8_t(0));
+	case 1: return olc::Pixel(uint8_t(255 - offs), uint8_t(255), uint8_t(0));
+	case 2: return olc::Pixel(uint8_t(0), uint8_t(255), uint8_t(offs));
+	case 3: return olc::Pixel(uint8_t(0), uint8_t(255 - offs), uint8_t(255));
+	case 4: return olc::Pixel(uint8_t(offs), uint8_t(0), uint8_t(255));
+	case 5: return olc::Pixel(uint8_t(255), uint8_t(0), uint8_t(255 - offs));
+	default: return olc::Pixel();
+	}
+}
+
+/**
+ * @brief Calculates a Color from a Hue in the range [0.0, 1.0).
+ * Colors between Red/Green/Blue are darker than usual.
+ */
+inline static olc::Pixel hue_dark [[maybe_unused]] (const float pc) noexcept
 {
 	const float npc = pc - std::floor(pc);
 	const int offs = int(std::floor((255 * 3) * npc)) % 255;
 	const int step = int(npc * 3);
+
 	switch (step)
 	{
 	case 0: return olc::Pixel(uint8_t(255 - offs), uint8_t(offs), uint8_t(0));
