@@ -1,6 +1,8 @@
 # MuSiCaL - a Music Synthesis Coding Language
 
-This project is a means for me to learn and experiment with various Audio APIs (e.g. XAudio2).
+This project is a means for me to learn and experiment with various platform-specific Audio APIs.
+
+Currently supports Windows, compiled with Clang + CMake. Linux and MacOS support is planned.
 
 ## MSCL
 MSCL is a C library that allows you to synthesize music using basic commands written in code, somewhat similar to MML (Music Macro Language).
